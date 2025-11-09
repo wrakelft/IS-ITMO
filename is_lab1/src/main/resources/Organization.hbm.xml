@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+    <class name="org.example.model.Organization" table="organizations">
+        <id name="id" type="long" column="id">
+            <generator class="native"/>
+        </id>
+
+        <property name="name" type="string" column="name" not-null="true"/>
+
+        <many-to-one name="coordinates" class="org.example.model.Coordinates"
+                     column="coordinates_id" not-null="true" cascade="save-update"/>
+
+        <property name="creationDate" type="java.time.LocalDateTime" column="creation_date" not-null="true"/>
+
+        <many-to-one name="officialAddress" class="org.example.model.Address"
+                     column="official_address_id" not-null="true" cascade="save-update"/>
+
+        <property name="annualTurnover" type="double" column="annual_turnover" not-null="true"/>
+        <property name="employeesCount" type="integer" column="employees_count" not-null="true"/>
+        <property name="rating" type="integer" column="rating" not-null="true"/>
+        <property name="type" type="string" column="type"/>
+
+        <many-to-one name="postalAddress" class="org.example.model.Address"
+                     column="postal_address_id" cascade="save-update"/>
+    </class>
+</hibernate-mapping>

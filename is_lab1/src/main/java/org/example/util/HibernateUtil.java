@@ -16,11 +16,13 @@ public class HibernateUtil {
     public HibernateUtil() {
         try {
             StandardServiceRegistry standardServiceRegistry = new StandardServiceRegistryBuilder()
-                    .configure("hibernate.cfg")
+                    .configure("hibernate.cfg.xml")
                     .build();
 
             Metadata metadata = new MetadataSources(standardServiceRegistry)
-                    .addAnnotatedClass(org.example.model.Organization.class)
+                    .addResource("Organization.hbm.xml")
+                    .addResource("Coordinates.hbm.xml")
+                    .addResource("Address.hbm.xml")
                     .getMetadataBuilder()
                     .build();
 
