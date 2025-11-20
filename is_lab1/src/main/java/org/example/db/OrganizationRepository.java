@@ -6,8 +6,8 @@ import org.example.model.Organization;
 import org.example.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -156,6 +156,70 @@ public class OrganizationRepository {
                     Organization.class)
                     .setParameter("addressId", addressId)
                     .getResultList();
+        } finally {
+            session.close();
+        }
+    }
+
+
+    public Double getAverageRating() {
+        try(Session session = hibernateUtil.getSessionFactory().openSession()) {
+            Double avg = session.createQuery("select avg(o.rating) from Organization o", Double.class).uniqueResult();
+            return avg != null ? avg : 0.0;
+        }
+    }
+
+
+    public Organization getWithMinRating() {
+        try(Session session = hibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery("from Organization o order by o.rating asc", Organization.class)
+                    .setMaxResults(1)
+                    .uniqueResult();
+        }
+    }
+
+
+    public List<Organization> getWithRatingGreaterThan(int rating) {
+        try (Session session = hibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery("from Organization o where o.rating > :r", Organization.class)
+                    .setParameter("r", rating)
+                    .getResultList();
+        }
+    }
+
+
+    public void fireAllEmployees(long orgId) {
+        Session session = hibernateUtil.getSessionFactory().openSession();
+        Transaction tx = null;
+
+        try {
+            tx = session.beginTransaction();
+            session.createQuery("update Organization o set o.employeesCount = 0 where o.id = :id")
+                    .setParameter("id", orgId)
+                    .executeUpdate();
+            tx.commit();
+        } catch (RuntimeException e) {
+            if (tx != null) tx.rollback();
+            throw e;
+        } finally {
+            session.close();
+        }
+    }
+
+
+    public void hireEmployee(long orgId) {
+        Session session = hibernateUtil.getSessionFactory().openSession();
+        Transaction tx = null;
+
+        try {
+            tx = session.beginTransaction();
+            session.createQuery("update Organization o set o.employeesCount = o.employeesCount + 1 where o.id = :id")
+                    .setParameter("id", orgId)
+                    .executeUpdate();
+            tx.commit();
+        } catch (RuntimeException e) {
+            if (tx != null) tx.rollback();
+            throw e;
         } finally {
             session.close();
         }
