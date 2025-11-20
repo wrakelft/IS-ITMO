@@ -8,6 +8,7 @@ import org.hibernate.Session;
 import org.hibernate.Transaction;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -17,23 +18,31 @@ public class OrganizationRepository {
     @Inject
     private HibernateUtil hibernateUtil;
 
-    public Long save(Organization organization) {
+    public Organization create(Organization organization) {
+        Objects.requireNonNull(organization, "organization mustn't be null");
+
+        if (organization.getCreationDate() == null) {
+            organization.setCreationDate(LocalDateTime.now());
+        }
+
         Session session = hibernateUtil.getSessionFactory().openSession();
         Transaction tx = null;
         try {
             tx = session.beginTransaction();
-            session.persist(organization);
+            session.save(organization);
             tx.commit();
-            return organization.getId();
-        } catch (Exception e) {
+            return organization;
+        } catch (RuntimeException e) {
             if (tx != null) tx.rollback();
-            throw new RuntimeException("Error saving organization", e);
+            throw e;
         } finally {
             session.close();
         }
     }
 
+
     public Organization findById(Long id) {
+        Objects.requireNonNull(id, "id must not be null");
         Session session = hibernateUtil.getSessionFactory().openSession();
         try {
             return session.find(Organization.class, id);
@@ -41,6 +50,7 @@ public class OrganizationRepository {
             session.close();
         }
     }
+
 
     public List<Organization> findAll() {
         Session session = hibernateUtil.getSessionFactory().openSession();
@@ -51,7 +61,10 @@ public class OrganizationRepository {
         }
     }
 
+
     public void update(Organization organization) {
+        Objects.requireNonNull(organization, "organization must not be null");
+        Objects.requireNonNull(organization.getId(), "id must not be null");
         Session session = hibernateUtil.getSessionFactory().openSession();
         Transaction tx = null;
 
@@ -66,6 +79,7 @@ public class OrganizationRepository {
             session.close();
         }
     }
+
 
     public void delete(Long id, boolean cascadeRelated) {
         Objects.requireNonNull(id, "id is null");
@@ -92,7 +106,7 @@ public class OrganizationRepository {
                             .setParameter("aId", addrId)
                             .uniqueResult();
                     long usage = cnt == null ? 0L : cnt;
-                    if (usage > 0L) {
+                    if (usage == 0L) {
                         Address managedAddr = session.find(Address.class, addrId);
                         if (managedAddr != null) session.remove(managedAddr);
                     }
@@ -104,7 +118,7 @@ public class OrganizationRepository {
                             .setParameter("cId", coordsId)
                             .uniqueResult();
                     long usage = cnt == null ? 0L : cnt;
-                    if (usage > 0L) {
+                    if (usage == 0L) {
                         Coordinates managedCoords = session.find(Coordinates.class, coordsId);
                         if (managedCoords != null) session.remove(managedCoords);
                     }
@@ -119,6 +133,7 @@ public class OrganizationRepository {
         }
     }
 
+
     public List<Organization> findByCoordinatesId(Long coordinatesId) {
         Session session = hibernateUtil.getSessionFactory().openSession();
         try {
@@ -131,6 +146,7 @@ public class OrganizationRepository {
             session.close();
         }
     }
+
 
     public List<Organization> findByOfficialAddressId(Long addressId) {
         Session session = hibernateUtil.getSessionFactory().openSession();

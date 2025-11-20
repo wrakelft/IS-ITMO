@@ -4233,20 +4233,14 @@ false Zulu
       <OwnerName>postgres</OwnerName>
     </schema>
     <schema id="264" parent="2" name="public">
-      <AutoIntrospectionLevel>3</AutoIntrospectionLevel>
       <Comment>standard public schema</Comment>
       <Current>1</Current>
-      <LastIntrospectionL1Xid>747</LastIntrospectionL1Xid>
-      <LastIntrospectionL2Xid>747</LastIntrospectionL2Xid>
-      <LastIntrospectionL3Xid>747</LastIntrospectionL3Xid>
-      <LastIntrospectionLevel>3</LastIntrospectionLevel>
       <LastIntrospectionLocalTimestamp>2025-11-09.12:55:33</LastIntrospectionLocalTimestamp>
       <ObjectId>2200</ObjectId>
       <StateNumber>524</StateNumber>
       <OwnerName>pg_database_owner</OwnerName>
     </schema>
     <sequence id="265" parent="264" name="hibernate_sequence">
-      <DetailsLevel>2</DetailsLevel>
       <ObjectId>16414</ObjectId>
       <SequenceIdentity>1</SequenceIdentity>
       <StartValue>1</StartValue>
@@ -4255,21 +4249,18 @@ false Zulu
       <OwnerName>postgres</OwnerName>
     </sequence>
     <table id="266" parent="264" name="addresses">
-      <DetailsLevel>2</DetailsLevel>
       <ObjectId>16397</ObjectId>
       <StateNumber>745</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>postgres</OwnerName>
     </table>
     <table id="267" parent="264" name="coordinates">
-      <DetailsLevel>2</DetailsLevel>
       <ObjectId>16402</ObjectId>
       <StateNumber>744</StateNumber>
       <AccessMethodId>2</AccessMethodId>
       <OwnerName>postgres</OwnerName>
     </table>
     <table id="268" parent="264" name="organizations">
-      <DetailsLevel>2</DetailsLevel>
       <ObjectId>16407</ObjectId>
       <StateNumber>744</StateNumber>
       <AccessMethodId>2</AccessMethodId>

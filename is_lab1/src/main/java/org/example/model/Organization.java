@@ -89,7 +89,7 @@ public class Organization {
     }
 
     public void setEmployeesCount(Integer employeesCount) {
-        if (employeesCount == null || employeesCount <= 0) {
+        if (employeesCount == null || employeesCount < 0) {
             throw new IllegalArgumentException("Employees count must be greater than 0");
         }
         this.employeesCount = employeesCount;
