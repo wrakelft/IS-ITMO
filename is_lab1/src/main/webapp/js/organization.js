@@ -101,8 +101,8 @@ function saveOrganization() {
         employeesCount: Number(employeesCount),
         type,
         coordinates: {
-            x: Number(coordinatesX),
-            y: Number(coordinatesY)
+            x: coordinatesX,
+            y: coordinatesY
         },
         officialAddress: {
             street: officialAddress
@@ -261,3 +261,28 @@ function renderTable() {
 document.addEventListener('DOMContentLoaded', () => {
     loadTableData();
 });
+
+const socket = new WebSocket('ws://localhost:8080/is_lab1-1.0-SNAPSHOT/ws/organizations');
+
+socket.onopen = function(event) {
+    console.log("WebSocket opened:", event);
+};
+
+socket.onmessage = function(event) {
+    const message = JSON.parse(event.data);
+    console.log("Received WebSocket message:", message);
+
+    if (message.type === "UPDATE" || message.type === "CREATE" || message.type === "DELETED") {
+        loadTableData();
+    }
+};
+
+
+socket.onclose = function(event) {
+    console.log("WebSocket closed:", event);
+};
+
+socket.onerror = function(event) {
+    console.error("WebSocket error:", event);
+};
+
