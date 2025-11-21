@@ -1,7 +1,7 @@
-package org.example.controller;
+package ru.itmo.controller;
 
-import org.example.model.Organization;
-import org.example.service.OrganizationService;
+import ru.itmo.model.Organization;
+import ru.itmo.service.OrganizationService;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -9,12 +9,16 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 
+
+@Path("/api/organizations")
 public class OrganizationController {
 
     @Inject
     private OrganizationService organizationService;
 
     @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response create(Organization organization) {
         Organization created = organizationService.createOrganization(organization);
         return Response.status(Response.Status.CREATED).entity(created).build();
@@ -22,6 +26,7 @@ public class OrganizationController {
 
     @GET
     @Path("/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response findById(@PathParam("id") Long id) {
         Organization organization = organizationService.findById(id);
         if (organization == null) {
@@ -31,6 +36,7 @@ public class OrganizationController {
     }
 
     @GET
+    @Produces(MediaType.APPLICATION_JSON)
     public Response findAll() {
         List<Organization> organizations = organizationService.findAll();
         return Response.ok(organizations).build();
@@ -38,6 +44,8 @@ public class OrganizationController {
 
     @PUT
     @Path("/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response update(@PathParam("id") Long id, Organization updated) {
         updated.setId(id);
         organizationService.updateOrganization(updated);
@@ -53,6 +61,7 @@ public class OrganizationController {
 
     @GET
     @Path("/average-rating")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response averageRating() {
         Double avg = organizationService.getAverageRating();
         return Response.ok(avg).build();
@@ -60,6 +69,7 @@ public class OrganizationController {
 
     @GET
     @Path("/rating-greater-than/{rating}")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response ratingGreaterThan(@PathParam("rating") int rating) {
         List<Organization> result = organizationService.getWithRatingGreaterThan(rating);
         return Response.ok(result).build();

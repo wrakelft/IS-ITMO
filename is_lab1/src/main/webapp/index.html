@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Организации</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script defer src="js/organization.js"></script>
+</head>
+<body>
+
+<header>
+    <h1>Организации</h1>
+</header>
+
+<main>
+    <!-- Фильтры -->
+    <div class="filter-block">
+        <label for="nameFilter">Фильтр:</label>
+        <input id="nameFilter" type="text" placeholder="">
+        <button onclick="applyNameFilter()">Применить</button>
+        <button onclick="resetFilter()">Сбросить</button>
+    </div>
+
+    <!-- Кнопка создания новой организации -->
+    <div style="margin-top: 10px;">
+        <button class="primary" onclick="startCreateOrganization()">Создать новую организацию</button>
+    </div>
+
+    <!-- Таблица организаций -->
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Название</th>
+            <th>Координаты</th>
+            <th>Дата создания</th>>
+            <th>Адрес</th>
+            <th>Годовой оборот</th>
+            <th>Количество сотрудников</th>
+            <th>Рейтинг</th>
+            <th>Тип</th>
+            <th>Почтовый адрес</th>
+            <th>Действия</th>
+        </tr>
+        </thead>
+        <tbody id="organizationsTableBody">
+        </tbody>
+    </table>
+
+    <!-- Пагинация -->
+    <div id="pagination">
+        <button onclick="previousPage()">← Назад</button>
+        <span id="pageInfo"></span>
+        <button onclick="nextPage()">Вперед →</button>
+    </div>
+
+    <section id="organizationEditSection" class="modal" style="display: none;">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h2 id="organizationEditTitle">Новая организация</h2>
+                <button class="modal-close" onclick="cancelOrganizationEdit()">×</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-row">
+                    <label for="organizationName">Название:</label>
+                    <input id="organizationName" type="text">
+                </div>
+
+                <div class="form-row">
+                    <label for="organizationCoordinatesX">Координаты X:</label>
+                    <input id="organizationCoordinatesX" type="number">
+                </div>
+
+                <div class="form-row">
+                    <label for="organizationCoordinatesY">Координаты Y:</label>
+                    <input id="organizationCoordinatesY" type="number">
+                </div>
+
+                <div class="form-row">
+                    <label for="organizationAddress">Адрес:</label>
+                    <input id="organizationAddress" type="text">
+                </div>
+
+                <div class="form-row">
+                    <label for="organizationAnnualTurnover">Годовой оборот:</label>
+                    <input id="organizationAnnualTurnover" type="number" min="0">
+                </div>
+
+                <div class="form-row">
+                    <label for="organizationEmployees">Количество сотрудников:</label>
+                    <input id="organizationEmployees" type="number" min="0">
+                </div>
+
+                <div class="form-row">
+                    <label for="organizationRating">Рейтинг:</label>
+                    <input id="organizationRating" type="number" min="0">
+                </div>
+
+                <div class="form-row">
+                    <label for="organizationType">Тип организации:</label>
+                    <select id="organizationType">
+                        <option value="COMMERCIAL">COMMERCIAL</option>
+                        <option value="PUBLIC">PUBLIC</option>
+                        <option value="PRIVATE_LIMITED_COMPANY">PRIVATE_LIMITED_COMPANY</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label for="organizationPostalAddress">Почтовый адрес:</label>
+                    <input id="organizationPostalAddress" type="text">
+                </div>
+
+                <div id="organizationFormError" class="error" style="display: none;"></div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="primary" onclick="saveOrganization()">Сохранить</button>
+                <button onclick="cancelOrganizationEdit()">Отмена</button>
+            </div>
+        </div>
+    </section>
+
+
+
+    <div id="organizationGlobalError" class="error" style="display: none;"></div>
+</main>
+
+</body>
+</html>

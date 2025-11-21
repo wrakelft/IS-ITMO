@@ -4,7 +4,7 @@
         "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
 
 <hibernate-mapping>
-    <class name="org.example.model.Address" table="addresses">
+    <class name="ru.itmo.model.Address" table="addresses">
         <id name="id" type="long" column="id">
             <generator class="native"/>
         </id>

@@ -1,4 +1,4 @@
-package org.example.filter;
+package ru.itmo.filter;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;

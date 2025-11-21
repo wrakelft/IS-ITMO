@@ -1,4 +1,4 @@
-package org.example.util;
+package ru.itmo.util;
 
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.Metadata;

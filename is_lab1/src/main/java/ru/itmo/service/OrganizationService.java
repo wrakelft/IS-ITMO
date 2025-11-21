@@ -1,13 +1,13 @@
-package org.example.service;
+package ru.itmo.service;
 
-import org.example.model.Organization;
-import org.example.db.OrganizationRepository;
+import ru.itmo.model.Organization;
+import ru.itmo.db.OrganizationRepository;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.util.List;
-import org.example.websocket.OrganizationWebSocket;
+import ru.itmo.websocket.OrganizationWebSocket;
 
 @Named("organizationService")
 @ApplicationScoped

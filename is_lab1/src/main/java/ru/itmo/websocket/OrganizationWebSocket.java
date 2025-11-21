@@ -1,4 +1,4 @@
-package org.example.websocket;
+package ru.itmo.websocket;
 
 import jakarta.websocket.*;
 import jakarta.websocket.server.ServerEndpoint;

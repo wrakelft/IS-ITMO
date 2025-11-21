@@ -4,7 +4,7 @@
         "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
 
 <hibernate-mapping>
-    <class name="org.example.model.Coordinates" table="coordinates">
+    <class name="ru.itmo.model.Coordinates" table="coordinates">
         <id name="id" type="long" column="id">
             <generator class="native"/>
         </id>

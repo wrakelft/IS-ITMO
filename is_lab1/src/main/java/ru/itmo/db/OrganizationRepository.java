@@ -1,9 +1,10 @@
-package org.example.db;
+package ru.itmo.db;
 
-import org.example.model.Address;
-import org.example.model.Coordinates;
-import org.example.model.Organization;
-import org.example.util.HibernateUtil;
+import ru.itmo.model.Address;
+import ru.itmo.model.Coordinates;
+import ru.itmo.model.Organization;
+import ru.itmo.util.HibernateUtil;
+import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -45,7 +46,12 @@ public class OrganizationRepository {
         Objects.requireNonNull(id, "id must not be null");
         Session session = hibernateUtil.getSessionFactory().openSession();
         try {
-            return session.find(Organization.class, id);
+            Organization organization = session.find(Organization.class, id);
+
+            Hibernate.initialize(organization.getCoordinates());
+            Hibernate.initialize(organization.getOfficialAddress());
+            Hibernate.initialize(organization.getPostalAddress());
+            return organization;
         } finally {
             session.close();
         }
@@ -55,7 +61,15 @@ public class OrganizationRepository {
     public List<Organization> findAll() {
         Session session = hibernateUtil.getSessionFactory().openSession();
         try {
-            return session.createQuery("FROM Organization", Organization.class).getResultList();
+            List<Organization> organizations = session.createQuery("FROM Organization", Organization.class).getResultList();
+
+            for (Organization organization : organizations) {
+                Hibernate.initialize(organization.getCoordinates());
+                Hibernate.initialize(organization.getOfficialAddress());
+                Hibernate.initialize(organization.getPostalAddress());
+            }
+
+            return organizations;
         } finally {
             session.close();
         }

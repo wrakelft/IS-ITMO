@@ -1,4 +1,4 @@
-package org.example.model;
+package ru.itmo.model;
 
 public class Address {
     private Long id;

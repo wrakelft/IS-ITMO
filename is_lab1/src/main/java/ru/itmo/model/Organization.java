@@ -1,4 +1,4 @@
-package org.example.model;
+package ru.itmo.model;
 
 import java.time.LocalDateTime;
 
@@ -11,7 +11,7 @@ public class Organization {
     private Double annualTurnover;
     private Integer employeesCount;
     private Integer rating;
-    private OrganizatonType type;
+    private OrganizationType type;
     private Address postalAddress;
 
     public Organization() {
@@ -106,11 +106,11 @@ public class Organization {
         this.rating = rating;
     }
 
-    public OrganizatonType getType() {
+    public OrganizationType getType() {
         return type;
     }
 
-    public void setType(OrganizatonType type) {
+    public void setType(OrganizationType type) {
         this.type = type;
     }
 
