@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Организации</title>
     <link rel="stylesheet" href="css/styles.css">
+    <script defer src="js/wsBus.js"></script>
     <script defer src="js/organization.js"></script>
 </head>
 <body>
@@ -15,15 +16,48 @@
 <main>
     <!-- Фильтры -->
     <div class="filter-block">
-        <label for="nameFilter">Фильтр:</label>
-        <input id="nameFilter" type="text" placeholder="">
-        <button onclick="applyNameFilter()">Применить</button>
-        <button onclick="resetFilter()">Сбросить</button>
+        <label for="filterField">Поле:</label>
+        <select id="filterField">
+            <option value="name">Название</option>
+            <option value="officialAddress">Адрес</option>
+            <option value="postalAddress">Почтовый адрес</option>
+            <option value="type">Тип</option>
+            <option value="id">ID</option>
+        </select>
+
+        <label for="filterValue">Значение:</label>
+        <input id="filterValue" type="text" placeholder="полное совпадение">
+
+        <button class="primary" onclick="applyFilter()">Применить</button>
+        <button class="secondary" onclick="resetFilter()">Сбросить</button>
+
+        <div class="divider"></div>
+
+        <label for="sortField">Сортировка:</label>
+        <select id="sortField">
+            <option value="id">ID</option>
+            <option value="name">Название</option>
+            <option value="officialAddress">Адрес</option>
+            <option value="postalAddress">Почтовый адрес</option>
+            <option value="type">Тип</option>
+            <option value="creationDate">Дата создания</option>
+
+        </select>
+
+        <select id="sortDir">
+            <option value="asc">↑</option>
+            <option value="desc">↓</option>
+        </select>
+
+        <button class="secondary" onclick="applySort()">Сортировать</button>
     </div>
 
+
     <!-- Кнопка создания новой организации -->
-    <div style="margin-top: 10px;">
+    <div class="toolbar" style="margin-top: 10px;">
         <button class="primary" onclick="startCreateOrganization()">Создать новую организацию</button>
+        <button class="primary" onclick="location.href = 'special.html'">Спец-операции</button>
+        <button class="secondary" onclick="location.href = 'refs.html'">Адреса/Координаты</button>
     </div>
 
     <!-- Таблица организаций -->
@@ -33,7 +67,7 @@
             <th>ID</th>
             <th>Название</th>
             <th>Координаты</th>
-            <th>Дата создания</th>>
+            <th>Дата создания</th>
             <th>Адрес</th>
             <th>Годовой оборот</th>
             <th>Количество сотрудников</th>
@@ -49,9 +83,9 @@
 
     <!-- Пагинация -->
     <div id="pagination">
-        <button onclick="previousPage()">← Назад</button>
+        <button class="secondary" onclick="previousPage()">← Назад</button>
         <span id="pageInfo"></span>
-        <button onclick="nextPage()">Вперед →</button>
+        <button class="secondary" onclick="nextPage()">Вперед →</button>
     </div>
 
     <section id="organizationEditSection" class="modal" style="display: none;">

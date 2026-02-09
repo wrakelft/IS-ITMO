@@ -1,10 +1,11 @@
 package ru.itmo.db;
 
+import ru.itmo.dto.OrganizationRequestDTO;
+import ru.itmo.mapper.OrganizationMapper;
 import ru.itmo.model.Address;
 import ru.itmo.model.Coordinates;
 import ru.itmo.model.Organization;
 import ru.itmo.util.HibernateUtil;
-import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -18,160 +19,175 @@ public class OrganizationRepository {
 
     @Inject
     private HibernateUtil hibernateUtil;
+    @Inject
+    private OrganizationMapper organizationMapper;
+    @Inject
+    private CoordinatesRepository coordinatesRepository;
+    @Inject
+    private AddressRepository addressRepository;
 
-    public Organization create(Organization organization) {
-        Objects.requireNonNull(organization, "organization mustn't be null");
+    public Organization createFromDto(OrganizationRequestDTO dto) {
+        try (Session session = hibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = session.beginTransaction();
+            try {
+                Organization org = organizationMapper.toNewForCreate(dto);
+                Coordinates coords;
+                if(dto.getCoordinatesId() != null) {
+                    coords = session.get(Coordinates.class, dto.getCoordinatesId());
+                    if (coords == null) throw new RuntimeException("Coordinates not found");
+                } else {
+                    coords = coordinatesRepository.createFromDto(dto.getCoordinates(), session);
+                }
+                org.setCoordinates(coords);
+                if (org.getCreationDate() == null) {
+                    org.setCreationDate(LocalDateTime.now());
+                }
 
-        if (organization.getCreationDate() == null) {
-            organization.setCreationDate(LocalDateTime.now());
-        }
+                Address official;
+                if (dto.getOfficialAddressId() != null) {
+                    official = session.get(Address.class, dto.getOfficialAddressId());
+                    if (official == null) throw new RuntimeException("Official address not found");
+                } else {
+                    official = addressRepository.createFromDtoInSession(dto.getOfficialAddress(), session);
+                }
+                org.setOfficialAddress(official);
 
-        Session session = hibernateUtil.getSessionFactory().openSession();
-        Transaction tx = null;
-        try {
-            tx = session.beginTransaction();
-            session.save(organization);
-            tx.commit();
-            return organization;
-        } catch (RuntimeException e) {
-            if (tx != null) tx.rollback();
-            throw e;
-        } finally {
-            session.close();
+                Address postal = null;
+                if (dto.getPostalAddressId() != null && dto.getPostalAddress() != null) {
+                    throw new RuntimeException("Provide only one of postalAddressId or postalAddress");
+                }
+                if (dto.getPostalAddressId() != null) {
+                    postal = session.get(Address.class, dto.getPostalAddressId());
+                    if (postal == null) throw new RuntimeException("Postal address not found");
+                }
+                else if (dto.getPostalAddress() != null) {
+                    postal = addressRepository.createFromDtoInSession(dto.getPostalAddress(), session);
+                }
+                org.setPostalAddress(postal);
+
+                session.save(org);
+                tx.commit();
+                return org;
+            } catch (RuntimeException e) {
+                tx.rollback();
+                throw e;
+            }
         }
     }
 
 
     public Organization findById(Long id) {
         Objects.requireNonNull(id, "id must not be null");
-        Session session = hibernateUtil.getSessionFactory().openSession();
-        try {
-            Organization organization = session.find(Organization.class, id);
-
-            Hibernate.initialize(organization.getCoordinates());
-            Hibernate.initialize(organization.getOfficialAddress());
-            Hibernate.initialize(organization.getPostalAddress());
-            return organization;
-        } finally {
-            session.close();
+        try (Session session = hibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery("""
+                select distinct o
+                from Organization o
+                left join fetch o.coordinates
+                left join fetch o.officialAddress
+                left join fetch o.postalAddress
+                where o.id = :id
+            """, Organization.class)
+                    .setParameter("id", id)
+                    .uniqueResult();
         }
     }
 
 
     public List<Organization> findAll() {
-        Session session = hibernateUtil.getSessionFactory().openSession();
-        try {
-            List<Organization> organizations = session.createQuery("FROM Organization", Organization.class).getResultList();
-
-            for (Organization organization : organizations) {
-                Hibernate.initialize(organization.getCoordinates());
-                Hibernate.initialize(organization.getOfficialAddress());
-                Hibernate.initialize(organization.getPostalAddress());
-            }
-
-            return organizations;
-        } finally {
-            session.close();
+        try (Session session = hibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery("""
+                select distinct o
+                from Organization o
+                left join fetch o.coordinates
+                left join fetch o.officialAddress
+                left join fetch o.postalAddress
+            """, Organization.class).getResultList();
         }
     }
 
+    public void updateFromDto(Long id, OrganizationRequestDTO dto) {
+        try (Session session = hibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = session.beginTransaction();
+            try {
+                Organization existing = session.get(Organization.class, id);
+                if (existing == null) throw new RuntimeException("Organization not found");
+                organizationMapper.applyBasicToExisting(dto, existing);
 
-    public void update(Organization organization) {
-        Objects.requireNonNull(organization, "organization must not be null");
-        Objects.requireNonNull(organization.getId(), "id must not be null");
-        Session session = hibernateUtil.getSessionFactory().openSession();
-        Transaction tx = null;
+                if (dto.getCoordinatesId() != null || dto.getCoordinates() != null) {
+                    Coordinates coords;
+                    if (dto.getCoordinatesId() != null) {
+                        coords = session.get(Coordinates.class, dto.getCoordinatesId());
+                        if (coords == null) throw new RuntimeException("Coordinates not found");
+                    } else {
+                        coords = coordinatesRepository.createFromDto(dto.getCoordinates(), session);
+                    }
+                    existing.setCoordinates(coords);
+                }
+                if (dto.getOfficialAddressId() != null || dto.getOfficialAddress() != null) {
+                    Address official;
+                    if (dto.getOfficialAddressId() != null) {
+                        official = session.get(Address.class, dto.getOfficialAddressId());
+                        if (official == null) throw new RuntimeException("Official address not found");
+                    } else {
+                        official = addressRepository.createFromDtoInSession(dto.getOfficialAddress(), session);
+                    }
+                    existing.setOfficialAddress(official);
+                }
+                if (dto.isPostalAddressProvided() || dto.isPostalAddressIdProvided()) {
+                    Address postal = null;
 
-        try {
-            tx = session.beginTransaction();
-            session.merge(organization);
-            tx.commit();
-        } catch (Exception e) {
-            if (tx != null) tx.rollback();
-            throw new RuntimeException("Error updating organization", e);
-        } finally {
-            session.close();
-        }
-    }
-
-
-    public void delete(Long id, boolean cascadeRelated) {
-        Objects.requireNonNull(id, "id is null");
-        Session session = hibernateUtil.getSessionFactory().openSession();
-        Transaction tx = null;
-        try {
-            tx = session.beginTransaction();
-            Organization organization = session.find(Organization.class, id);
-            if (organization == null) {
+                    if (dto.getPostalAddressId() != null) {
+                        postal = session.get(Address.class, dto.getPostalAddressId());
+                        if (postal == null) throw new RuntimeException("Postal address not found");
+                    } else if (dto.getPostalAddress() != null) {
+                        postal = addressRepository.createFromDtoInSession(dto.getPostalAddress(), session);
+                    } else {
+                        postal = null;
+                    }
+                    existing.setPostalAddress(postal);
+                }
                 tx.commit();
-                return;
+            } catch (RuntimeException e) {
+                tx.rollback();
+                throw e;
             }
-            Address addr = organization.getOfficialAddress();
-            Coordinates coords = organization.getCoordinates();
+        }
+    }
 
-            session.remove(organization);
-            session.flush();
-
-            if (cascadeRelated) {
-                if (addr != null && addr.getId() != null) {
-                    Long addrId = addr.getId();
-                    Long cnt = session.createQuery(
-                                    "select count(o.id) from Organization o where o.officialAddress.id = :aId", Long.class)
-                            .setParameter("aId", addrId)
-                            .uniqueResult();
-                    long usage = cnt == null ? 0L : cnt;
-                    if (usage == 0L) {
-                        Address managedAddr = session.find(Address.class, addrId);
-                        if (managedAddr != null) session.remove(managedAddr);
-                    }
-                }
-                if (coords != null && coords.getId() != null) {
-                    Long coordsId = coords.getId();
-                    Long cnt = session.createQuery(
-                                    "select count(o.id) from Organization o where o.coordinates.id = :cId", Long.class)
-                            .setParameter("cId", coordsId)
-                            .uniqueResult();
-                    long usage = cnt == null ? 0L : cnt;
-                    if (usage == 0L) {
-                        Coordinates managedCoords = session.find(Coordinates.class, coordsId);
-                        if (managedCoords != null) session.remove(managedCoords);
-                    }
-                }
+    public void delete(Long id) {
+        Objects.requireNonNull(id, "id is null");
+        try (Session session = hibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = session.beginTransaction();
+            try {
+                Organization organization = session.find(Organization.class, id);
+                if (organization != null) session.remove(organization);
+                tx.commit();
+            } catch (RuntimeException e) {
+                tx.rollback();
+                throw e;
             }
-            tx.commit();
-        } catch (Exception e) {
-            if (tx != null) tx.rollback();
-            throw new RuntimeException("Error deleting organization", e);
-        } finally {
-            session.close();
         }
     }
 
 
     public List<Organization> findByCoordinatesId(Long coordinatesId) {
-        Session session = hibernateUtil.getSessionFactory().openSession();
-        try {
+        try (Session session = hibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery(
                     "FROM Organization o WHERE o.coordinates.id = :coordinatesId",
                     Organization.class)
                     .setParameter("coordinatesId", coordinatesId)
                     .getResultList();
-        } finally {
-            session.close();
         }
     }
 
 
     public List<Organization> findByOfficialAddressId(Long addressId) {
-        Session session = hibernateUtil.getSessionFactory().openSession();
-        try {
+        try (Session session = hibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery(
                     "FROM Organization o WHERE o.officialAddress.id = :addressId",
                     Organization.class)
                     .setParameter("addressId", addressId)
                     .getResultList();
-        } finally {
-            session.close();
         }
     }
 
@@ -186,7 +202,14 @@ public class OrganizationRepository {
 
     public Organization getWithMinRating() {
         try(Session session = hibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery("from Organization o order by o.rating asc", Organization.class)
+            return session.createQuery("""
+                select distinct o
+                from Organization o
+                left join fetch o.coordinates
+                left join fetch o.officialAddress
+                left join fetch o.postalAddress
+                order by o.rating asc
+            """, Organization.class)
                     .setMaxResults(1)
                     .uniqueResult();
         }
@@ -195,7 +218,14 @@ public class OrganizationRepository {
 
     public List<Organization> getWithRatingGreaterThan(int rating) {
         try (Session session = hibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery("from Organization o where o.rating > :r", Organization.class)
+            return session.createQuery("""
+               select distinct o
+               from Organization o
+               left join fetch o.coordinates
+               left join fetch o.officialAddress
+               left join fetch o.postalAddress
+               where o.rating > :r
+            """, Organization.class)
                     .setParameter("r", rating)
                     .getResultList();
         }
@@ -203,39 +233,33 @@ public class OrganizationRepository {
 
 
     public void fireAllEmployees(long orgId) {
-        Session session = hibernateUtil.getSessionFactory().openSession();
-        Transaction tx = null;
-
-        try {
-            tx = session.beginTransaction();
-            session.createQuery("update Organization o set o.employeesCount = 0 where o.id = :id")
-                    .setParameter("id", orgId)
-                    .executeUpdate();
-            tx.commit();
-        } catch (RuntimeException e) {
-            if (tx != null) tx.rollback();
-            throw e;
-        } finally {
-            session.close();
+        try (Session session = hibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = session.beginTransaction();
+            try {
+                session.createQuery("update Organization o set o.employeesCount = 0 where o.id = :id")
+                        .setParameter("id", orgId)
+                        .executeUpdate();
+                tx.commit();
+            } catch (RuntimeException e) {
+                tx.rollback();
+                throw e;
+            }
         }
     }
 
 
     public void hireEmployee(long orgId) {
-        Session session = hibernateUtil.getSessionFactory().openSession();
-        Transaction tx = null;
-
-        try {
-            tx = session.beginTransaction();
+        try (Session session = hibernateUtil.getSessionFactory().openSession()){
+            Transaction tx = session.beginTransaction();
+            try {
             session.createQuery("update Organization o set o.employeesCount = o.employeesCount + 1 where o.id = :id")
                     .setParameter("id", orgId)
                     .executeUpdate();
             tx.commit();
-        } catch (RuntimeException e) {
-            if (tx != null) tx.rollback();
-            throw e;
-        } finally {
-            session.close();
+            } catch (RuntimeException e) {
+                if (tx != null) tx.rollback();
+                throw e;
+            }
         }
     }
 }

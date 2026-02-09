@@ -30,20 +30,6 @@ h1 {
     margin-right: 10px;
 }
 
-.filter-block button {
-    padding: 5px 10px;
-    background-color: #4CAF50;
-    border: none;
-    color: white;
-    cursor: pointer;
-    border-radius: 5px;
-}
-
-.filter-block button:hover {
-    background-color: #45a049;
-}
-
-/* Стиль таблицы */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -72,23 +58,15 @@ tr:nth-child(even) {
     margin-top: 20px;
     display: flex;
     justify-content: center;
+    align-items: center;
+    gap: 12px;
 }
 
 #pagination button {
-    padding: 8px 16px;
-    background-color: #007BFF;
-    color: white;
-    border: none;
-    cursor: pointer;
-    border-radius: 5px;
-    margin: 0 5px;
+    padding: 10px 18px;
+    border-radius: 10px;
 }
 
-#pagination button:hover {
-    background-color: #0056b3;
-}
-
-/* Стиль формы */
 .form-row {
     margin-bottom: 15px;
 }
@@ -217,6 +195,101 @@ button.danger:hover {
     padding: 16px 24px;
     flex-shrink: 0;        /* чтобы не сжимались */
 }
+
+/* form-row в одну линию: label + input + button */
+.form-row.inline {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.form-row.inline label {
+    margin-bottom: 0;
+    white-space: nowrap;
+    min-width: 140px;
+}
+
+.form-row.inline input,
+.form-row.inline select {
+    width: auto;
+    flex: 1;
+}
+
+.form-row.inline button {
+    white-space: nowrap;
+}
+
+.card {
+    background-color: #444;
+    border-radius: 8px;
+    padding: 14px 16px;
+}
+
+button {
+    padding: 10px 16px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    background: #3b3b3b;
+    color: #f0f0f0;
+    transition: transform 0.05s ease, filter 0.15s ease;
+}
+
+button:hover {
+    filter: brightness(1.07);
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+button.primary {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+    color: white;
+}
+button.primary:hover { background-color: #45a049; }
+
+button.secondary {
+    background-color: #3a3a3a;
+    border-color: #555;
+    color: #f0f0f0;
+}
+button.secondary:hover { background-color: #4a4a4a; }
+
+button.danger {
+    background-color: #D32F2F;
+    border-color: #D32F2F;
+    color: white;
+}
+button.danger:hover { background-color: #c62828; }
+
+/* маленькие кнопки в таблице */
+table button {
+    padding: 6px 10px;
+    border-radius: 7px;
+    font-size: 0.9rem;
+}
+
+.toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+table { width: 100%; }
+th, td { vertical-align: top; }
+
+
 
 
 

@@ -1,5 +1,6 @@
 package ru.itmo.service;
 
+import ru.itmo.dto.OrganizationRequestDTO;
 import ru.itmo.model.Organization;
 import ru.itmo.db.OrganizationRepository;
 
@@ -7,6 +8,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.util.List;
+
+import ru.itmo.validation.OrganizationRequestValidator;
 import ru.itmo.websocket.OrganizationWebSocket;
 
 @Named("organizationService")
@@ -15,9 +18,16 @@ public class OrganizationService {
 
     @Inject
     private OrganizationRepository organizationRepository;
+    @Inject
+    private AddressService addressService;
+    @Inject
+    private CoordinatesService coordinatesService;
+    @Inject
+    private OrganizationRequestValidator validator;
 
-    public Organization createOrganization(Organization organization) {
-        Organization created = organizationRepository.create(organization);
+    public Organization createOrganization(OrganizationRequestDTO dto) {
+        validator.validateForCreate(dto);
+        Organization created = organizationRepository.createFromDto(dto);
         OrganizationWebSocket.broadcast("{\"type\":\"CREATE\",\"id\":" + created.getId() + "}");
         return created;
     }
@@ -30,13 +40,14 @@ public class OrganizationService {
         return organizationRepository.findAll();
     }
 
-    public void updateOrganization(Organization organization) {
-        organizationRepository.update(organization);
-        OrganizationWebSocket.broadcast("{\"type\":\"UPDATE\",\"id\":" + organization.getId() + "}");
+    public void updateOrganizationDto(Long id, OrganizationRequestDTO dto) {
+        validator.validateForUpdate(dto);
+        organizationRepository.updateFromDto(id, dto);
+        OrganizationWebSocket.broadcast("{\"type\":\"UPDATE\",\"id\":" + id + "}");
     }
 
     public void deleteOrganization(Long id, boolean cascadeRelated) {
-        organizationRepository.delete(id, cascadeRelated);
+        organizationRepository.delete(id);
         OrganizationWebSocket.broadcast("{\"type\":\"DELETED\",\"id\":" + id + "}");
     }
 

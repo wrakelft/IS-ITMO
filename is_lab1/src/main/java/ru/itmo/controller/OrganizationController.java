@@ -2,6 +2,10 @@ package ru.itmo.controller;
 
 import ru.itmo.model.Organization;
 import ru.itmo.service.OrganizationService;
+import ru.itmo.dto.OrganizationRequestDTO;
+import ru.itmo.dto.OrganizationResponseDTO;
+import ru.itmo.mapper.OrganizationMapper;
+import java.util.stream.Collectors;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -15,13 +19,19 @@ public class OrganizationController {
 
     @Inject
     private OrganizationService organizationService;
+    @Inject
+    private OrganizationMapper organizationMapper;
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response create(Organization organization) {
-        Organization created = organizationService.createOrganization(organization);
-        return Response.status(Response.Status.CREATED).entity(created).build();
+    public Response create(OrganizationRequestDTO dto) {
+        try {
+            Organization created = organizationService.createOrganization(dto);
+            return Response.status(Response.Status.CREATED).entity(organizationMapper.toResponse(created)).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+        }
     }
 
     @GET
@@ -32,24 +42,33 @@ public class OrganizationController {
         if (organization == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        return Response.ok(organization).build();
+        OrganizationResponseDTO response = organizationMapper.toResponse(organization);
+        return Response.ok(response).build();
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response findAll() {
         List<Organization> organizations = organizationService.findAll();
-        return Response.ok(organizations).build();
+        List<OrganizationResponseDTO> response = organizations.stream()
+                .map(organizationMapper::toResponse)
+                .collect(Collectors.toList());
+        return Response.ok(response).build();
     }
 
     @PUT
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response update(@PathParam("id") Long id, Organization updated) {
-        updated.setId(id);
-        organizationService.updateOrganization(updated);
-        return Response.ok(updated).build();
+    public Response update(@PathParam("id") Long id, OrganizationRequestDTO dto) {
+        try {
+            organizationService.updateOrganizationDto(id, dto);
+            return Response.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+        } catch (RuntimeException e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
+        }
     }
 
     @DELETE
@@ -68,11 +87,26 @@ public class OrganizationController {
     }
 
     @GET
+    @Path("/min-rating")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response minRatingOrg() {
+        Organization org = organizationService.getWithMinRating();
+        if (org == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("No organizations").build();
+        }
+        OrganizationResponseDTO response = organizationMapper.toResponse(org);
+        return Response.ok(response).build();
+    }
+
+    @GET
     @Path("/rating-greater-than/{rating}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response ratingGreaterThan(@PathParam("rating") int rating) {
         List<Organization> result = organizationService.getWithRatingGreaterThan(rating);
-        return Response.ok(result).build();
+        List<OrganizationResponseDTO> response = result.stream()
+                .map(organizationMapper::toResponse)
+                .collect(Collectors.toList());
+        return Response.ok(response).build();
     }
 
     @PUT

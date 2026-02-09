@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>Спец-операции</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <script defer src="js/wsBus.js"></script>
+    <script defer src="js/special.js"></script>
+</head>
+<body>
+
+<header>
+    <h1>Спец-операции</h1>
+</header>
+
+<main>
+    <div style="margin-bottom: 10px;">
+        <button class="primary" onclick="location.href='index.html'">← Назад к организациям</button>
+    </div>
+
+    <section class="card">
+        <h2>Среднее значение rating</h2>
+        <button class="primary" onclick="loadAverageRating()">Посчитать</button>
+        <div id="avgRatingResult" style="margin-top:10px;"></div>
+    </section>
+
+    <section class="card" style="margin-top: 16px;">
+        <h2>Организация с минимальным rating</h2>
+        <button class="primary" onclick="loadMinRatingOrg()">Найти</button>
+        <table style="margin-top:10px;">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Название</th>
+                <th>Координаты</th>
+                <th>Дата создания</th>
+                <th>Адрес</th>
+                <th>Годовой оборот</th>
+                <th>Количество сотрудников</th>
+                <th>Рейтинг</th>
+                <th>Тип</th>
+                <th>Почтовый адрес</th>
+            </tr>
+            </thead>
+            <tbody id="minRatingTableBody"></tbody>
+        </table>
+
+    </section>
+
+    <section class="card" style="margin-top: 16px;">
+        <h2>Организации с rating больше заданного</h2>
+        <div class="form-row inline">
+            <label for="ratingThreshold">Порог rating:</label>
+            <input id="ratingThreshold" type="number" min="0" />
+            <button class="primary" type="button" onclick="loadRatingGreaterThan()">Показать</button>
+        </div>
+        <table style="margin-top:10px;">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Название</th>
+                <th>Координаты</th>
+                <th>Дата создания</th>
+                <th>Адрес</th>
+                <th>Годовой оборот</th>
+                <th>Количество сотрудников</th>
+                <th>Рейтинг</th>
+                <th>Тип</th>
+                <th>Почтовый адрес</th>
+            </tr>
+            </thead>
+            <tbody id="ratingGreaterTableBody"></tbody>
+        </table>
+    </section>
+
+    <section class="card" style="margin-top: 16px;">
+        <h2>Уволить всех сотрудников</h2>
+        <div class="form-row inline">
+            <label for="fireOrgId">ID организации:</label>
+            <input id="fireOrgId" type="number" min="1" />
+            <button class="primary" type="button" onclick="fireAll()">Уволить</button>
+        </div>
+    </section>
+
+    <section class="card" style="margin-top: 16px;">
+        <h2>Нанять сотрудника</h2>
+        <div class="form-row inline">
+            <label for="hireOrgId">ID организации:</label>
+            <input id="hireOrgId" type="number" min="1" />
+            <button class="primary" type="button" onclick="hire()">Нанять</button>
+        </div>
+    </section>
+
+    <div id="specialGlobalError" class="error" style="display:none; margin-top: 16px;"></div>
+    <div id="specialGlobalOk" style="display:none; margin-top: 16px;"></div>
+</main>
+
+</body>
+</html>

@@ -3,32 +3,95 @@ const pageSize = 5;
 
 let allOrganizations = [];
 let editingOrganizationId = null;
+let originalRefs = {
+    coordinatesId: null,
+    officialAddressId: null,
+    postalAddressId: null,
+    coordinatesX: null,
+    coordinatesY: null,
+    officialStreet: null,
+    postalStreet: null
+};
 
+let filterState = { field: "name", value: "" };
+let sortState = { field: "id", dir: "asc" };
 
-function getFilteredOrganizations() {
-    const input = document.getElementById('nameFilter');
-    const filterValue = input ? input.value.toLowerCase().trim() : '';
-
-    if (!filterValue) {
-        return allOrganizations;
-    }
-
-    return allOrganizations.filter(org =>
-        (org.name || '').toLowerCase().includes(filterValue)
-    );
+function norm(s) {
+    return (s ?? "").toString().trim().toLowerCase();
 }
 
-function applyNameFilter() {
+function getFieldValue(org, field) {
+    switch (field) {
+        case "name": return org.name;
+        case "type": return org.type;
+        case "officialAddress": return org.officialAddress?.street;
+        case "postalAddress": return org.postalAddress?.street;
+        case "creationDate":
+            return org.creationDate ? org.creationDate.substring(0, 19).replace("T", " ") : "";
+        case "id": return org.id;
+        default: return "";
+    }
+}
+
+function applyFilter() {
+    filterState.field = document.getElementById("filterField").value;
+    filterState.value = document.getElementById("filterValue").value;
+    currentPage = 1;
+    renderTable();
+}
+
+function applySort() {
+    sortState.field = document.getElementById("sortField").value;
+    sortState.dir = document.getElementById("sortDir").value;
     currentPage = 1;
     renderTable();
 }
 
 function resetFilter() {
-    const input = document.getElementById('nameFilter');
-    if (input) input.value = '';
+    const v = document.getElementById('filterValue');
+    if (v) v.value = "";
+    filterState.value = "";
     currentPage = 1;
     renderTable();
 }
+
+function getProcessedOrganizations() {
+    let list = [...allOrganizations];
+
+    const fvRaw = (filterState.value ?? "").toString().trim();
+    const fv = norm(fvRaw);
+
+    if (fv) {
+        if (filterState.field === "id") {
+            const idNum = Number(fvRaw);
+            if (!Number.isFinite(idNum)) {
+                showError("Id должен быть числом")
+                list = [];
+            } else {
+                list = list.filter(org => Number(org.id) === idNum);
+            }
+        } else {
+            list = list.filter(org => norm(getFieldValue(org, filterState.field)) === fv);
+        }
+    }
+
+    const dirMul = sortState.dir === "desc" ? -1 : 1;
+    list.sort((a, b) => {
+        const va = getFieldValue(a, sortState.field);
+        const vb = getFieldValue(b, sortState.field);
+
+        if (sortState.field === "id") return (Number(va) - Number(vb)) * dirMul;
+
+        const sa = norm(va);
+        const sb = norm(vb);
+        if (sa < sb) return -1 * dirMul;
+        if (sa > sb) return 1 * dirMul;
+        return 0;
+    });
+
+    return list;
+}
+
 
 
 function clearOrganizationForm() {
@@ -53,6 +116,16 @@ function startCreateOrganization() {
 
 function editOrganization(org) {
     editingOrganizationId = org.id;
+
+    originalRefs.coordinatesId = org.coordinates?.id ?? null;
+    originalRefs.officialAddressId = org.officialAddress?.id ?? null;
+    originalRefs.postalAddressId = org.postalAddress?.id ?? null;
+
+    originalRefs.coordinatesX = org.coordinates?.x != null ? Number(org.coordinates.x) : null;
+    originalRefs.coordinatesY = org.coordinates?.y != null ? Number(org.coordinates.y) : null;
+    originalRefs.officialStreet = normalizeStr(org.officialAddress?.street);
+    originalRefs.postalStreet = normalizeStr(org.postalAddress?.street);
+
     document.getElementById('organizationEditTitle').textContent = 'Редактирование организации';
 
     document.getElementById('organizationName').value = org.name || '';
@@ -78,63 +151,113 @@ function editOrganization(org) {
     document.getElementById('organizationEditSection').style.display = 'flex';
 }
 
+function normalizeStr(s) {
+    return (s ?? '').toString().trim();
+}
+
 function saveOrganization() {
-    const name = document.getElementById('organizationName').value;
-    const rating = document.getElementById('organizationRating').value;
-    const annualTurnover = document.getElementById('organizationAnnualTurnover').value;
-    const employeesCount = document.getElementById('organizationEmployees').value;
+    clearFormError();
+
+    const name = normalizeStr(document.getElementById('organizationName').value);
+    const ratingRaw = document.getElementById('organizationRating').value;
+    const annualTurnoverRaw = document.getElementById('organizationAnnualTurnover').value;
+    const employeesCountRaw = document.getElementById('organizationEmployees').value;
     const type = document.getElementById('organizationType').value;
-    const coordinatesX = document.getElementById('organizationCoordinatesX').value;
-    const coordinatesY = document.getElementById('organizationCoordinatesY').value;
-    const officialAddress = document.getElementById('organizationAddress').value;
-    const postalAddress = document.getElementById('organizationPostalAddress').value;
+    const coordinatesXRaw = document.getElementById('organizationCoordinatesX').value;
+    const coordinatesYRaw = document.getElementById('organizationCoordinatesY').value;
+    const officialAddress = normalizeStr(document.getElementById('organizationAddress').value);
+    const postalAddress = normalizeStr(document.getElementById('organizationPostalAddress').value);
 
-    if (!name || !rating || !annualTurnover || !employeesCount || !coordinatesX || !coordinatesY) {
-        alert('Все обязательные поля должны быть заполнены');
-        return;
-    }
+    // ---- Front validation (вместо alert) ----
+    if (!name) return showFormError("Название обязательно");
+    if (!officialAddress) return showFormError("Адрес (official) обязателен");
 
-    const organization = {
+    if (!isFiniteNumber(ratingRaw)) return showFormError("Рейтинг должен быть числом");
+    const rating = Number(ratingRaw);
+    if (rating <= 0) return showFormError("Рейтинг должен быть > 0");
+
+    if (!isFiniteNumber(annualTurnoverRaw)) return showFormError("Годовой оборот должен быть числом");
+    const annualTurnover = Number(annualTurnoverRaw);
+    if (annualTurnover <= 0) return showFormError("Годовой оборот должен быть > 0");
+
+    if (!isFiniteNumber(employeesCountRaw)) return showFormError("Количество сотрудников должно быть числом");
+    const employeesCount = Number(employeesCountRaw);
+    if (employeesCount < 0) return showFormError("Количество сотрудников должно быть ≥ 0");
+
+    if (!isFiniteNumber(coordinatesXRaw) || !isFiniteNumber(coordinatesYRaw))
+        return showFormError("Координаты X/Y должны быть числами");
+
+    const xNum = Number(coordinatesXRaw);
+    const yNum = Number(coordinatesYRaw);
+
+    const isUpdate = !!editingOrganizationId;
+
+    const payload = {
         name,
-        rating: Number(rating),
-        annualTurnover: Number(annualTurnover),
-        employeesCount: Number(employeesCount),
-        type,
-        coordinates: {
-            x: coordinatesX,
-            y: coordinatesY
-        },
-        officialAddress: {
-            street: officialAddress
-        },
-        postalAddress: {
-            street: postalAddress
-        }
+        rating,
+        annualTurnover,
+        employeesCount,
+        type
     };
 
-    const method = editingOrganizationId ? 'PUT' : 'POST';
-    const url = editingOrganizationId
-        ? `api/organizations/${editingOrganizationId}`
-        : 'api/organizations';
+    // ---- твоя текущая логика привязки refs ----
+    const coordsChanged = (originalRefs.coordinatesX !== xNum || originalRefs.coordinatesY !== yNum);
+
+    if (!isUpdate || coordsChanged) {
+        payload.coordinates = { x: xNum, y: yNum };
+    } else if (originalRefs.coordinatesId != null) {
+        payload.coordinatesId = originalRefs.coordinatesId;
+    }
+
+    const officialChanged = originalRefs.officialStreet !== officialAddress;
+
+    if (!isUpdate || officialChanged) {
+        payload.officialAddress = { street: officialAddress };
+    } else if (originalRefs.officialAddressId != null) {
+        payload.officialAddressId = originalRefs.officialAddressId;
+    }
+
+    const postalChanged = originalRefs.postalStreet !== postalAddress;
+
+    if (!isUpdate) {
+        // postal может быть пустым => просто не отправляем
+        if (postalAddress) payload.postalAddress = { street: postalAddress };
+    } else {
+        if (postalChanged) {
+            // если очистили поле => явно шлём null
+            payload.postalAddress = postalAddress ? { street: postalAddress } : null;
+        } else {
+            if (originalRefs.postalAddressId != null) payload.postalAddressId = originalRefs.postalAddressId;
+        }
+    }
+
+    const method = isUpdate ? 'PUT' : 'POST';
+    const url = isUpdate ? `api/organizations/${editingOrganizationId}` : 'api/organizations';
 
     fetch(url, {
         method,
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(organization),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
     })
-        .then(response => {
+        .then(async (response) => {
+            const text = await response.text().catch(() => "");
+
             if (!response.ok) {
-                throw new Error('Ошибка сохранения');
+                // вот тут теперь показываем ЧТО ИМЕННО вернул бэк
+                const msg = (text || `HTTP ${response.status}`).trim();
+                showFormError(msg);
+                throw new Error(msg);
             }
-            return response.json();
+
+            // успех: тело может быть пустым
+            if (!text) return null;
+            try { return JSON.parse(text); } catch { return text; }
         })
-        .then(data => {
-            console.log('Организация сохранена:', data);
+        .then(() => {
+            clearFormError();
             document.getElementById('organizationEditSection').style.display = 'none';
             editingOrganizationId = null;
-            loadTableData(); // перезагружаем таблицу с сервера
+            loadTableData();
         })
         .catch((error) => {
             console.error('Ошибка при сохранении организации:', error);
@@ -152,7 +275,7 @@ function deleteOrganization(id) {
         return;
     }
 
-    fetch(`api/organizations/${id}?cascade=true`, {
+    fetch(`api/organizations/${id}`, {
         method: 'DELETE'
     })
         .then(response => {
@@ -176,7 +299,7 @@ function previousPage() {
 }
 
 function nextPage() {
-    const filtered = getFilteredOrganizations();
+    const filtered = getProcessedOrganizations();
     const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
 
     if (currentPage < totalPages) {
@@ -202,7 +325,7 @@ function renderTable() {
     const tableBody = document.getElementById('organizationsTableBody');
     tableBody.innerHTML = '';
 
-    const organizations = getFilteredOrganizations();
+    const organizations = getProcessedOrganizations();
     const totalPages = Math.max(1, Math.ceil(organizations.length / pageSize));
     if (currentPage > totalPages) currentPage = totalPages;
 
@@ -240,8 +363,10 @@ function renderTable() {
             <td>${organization.type}</td>
             <td>${postalAddressText}</td>
             <td>
-                <button class="primary edit-btn">Редактировать</button>
-                <button class="delete-btn">Удалить</button>
+                <div class="actions">
+                    <button class="primary edit-btn">Редактировать</button>
+                    <button class="danger delete-btn">Удалить</button>
+                </div>
             </td>
         `;
 
@@ -260,29 +385,59 @@ function renderTable() {
 
 document.addEventListener('DOMContentLoaded', () => {
     loadTableData();
+
+    const fieldSel = document.getElementById("filterField");
+    const valInp = document.getElementById("filterValue");
+
+    if (fieldSel && valInp) {
+        fieldSel.addEventListener("change", () => {
+            valInp.type = fieldSel.value === "id" ? "number" : "text";
+            valInp.value = "";
+        });
+    }
 });
 
-const socket = new WebSocket('ws://localhost:8080/is_lab1-1.0-SNAPSHOT/ws/organizations');
-
-socket.onopen = function(event) {
-    console.log("WebSocket opened:", event);
-};
-
-socket.onmessage = function(event) {
-    const message = JSON.parse(event.data);
-    console.log("Received WebSocket message:", message);
-
-    if (message.type === "UPDATE" || message.type === "CREATE" || message.type === "DELETED") {
-        loadTableData();
-    }
-};
+if (window.wsBus) {
+    wsBus.start();
+    wsBus.on((msg) => {
+        if (["CREATE","UPDATE","DELETED","FIRE_ALL","HIRE"].includes(msg.type)) {
+            loadTableData();
+        }
+    });
+}
 
 
-socket.onclose = function(event) {
-    console.log("WebSocket closed:", event);
-};
 
-socket.onerror = function(event) {
-    console.error("WebSocket error:", event);
-};
+function showFormError(msg) {
+    const box = document.getElementById("organizationFormError");
+    if (!box) return alert(msg);
+    box.textContent = msg;
+    box.style.display = "block";
+}
+
+function clearFormError() {
+    const box = document.getElementById("organizationFormError");
+    if (!box) return;
+    box.textContent = "";
+    box.style.display = "none";
+}
+
+function isFiniteNumber(v) {
+    const n = Number(v);
+    return Number.isFinite(n);
+}
+
+window.applyFilter = applyFilter;
+window.resetFilter = resetFilter;
+window.applySort = applySort;
+
+window.startCreateOrganization = startCreateOrganization;
+window.saveOrganization = saveOrganization;
+window.cancelOrganizationEdit = cancelOrganizationEdit;
+
+window.previousPage = previousPage;
+window.nextPage = nextPage;
+window.editOrganization = editOrganization;
+window.deleteOrganization = deleteOrganization;
+
 
