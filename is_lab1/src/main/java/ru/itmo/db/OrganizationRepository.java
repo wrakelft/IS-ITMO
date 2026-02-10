@@ -232,14 +232,15 @@ public class OrganizationRepository {
     }
 
 
-    public void fireAllEmployees(long orgId) {
+    public int fireAllEmployees(long orgId) {
         try (Session session = hibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();
             try {
-                session.createQuery("update Organization o set o.employeesCount = 0 where o.id = :id")
+               int updated = session.createQuery("update Organization o set o.employeesCount = 0 where o.id = :id")
                         .setParameter("id", orgId)
                         .executeUpdate();
                 tx.commit();
+                return updated;
             } catch (RuntimeException e) {
                 tx.rollback();
                 throw e;
@@ -248,14 +249,15 @@ public class OrganizationRepository {
     }
 
 
-    public void hireEmployee(long orgId) {
+    public int hireEmployee(long orgId) {
         try (Session session = hibernateUtil.getSessionFactory().openSession()){
             Transaction tx = session.beginTransaction();
             try {
-            session.createQuery("update Organization o set o.employeesCount = o.employeesCount + 1 where o.id = :id")
+            int updated = session.createQuery("update Organization o set o.employeesCount = o.employeesCount + 1 where o.id = :id")
                     .setParameter("id", orgId)
                     .executeUpdate();
             tx.commit();
+            return updated;
             } catch (RuntimeException e) {
                 if (tx != null) tx.rollback();
                 throw e;

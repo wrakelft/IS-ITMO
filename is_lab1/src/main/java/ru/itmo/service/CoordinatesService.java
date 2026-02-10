@@ -5,6 +5,7 @@ import jakarta.inject.Inject;
 import ru.itmo.db.CoordinatesRepository;
 import ru.itmo.dto.CoordinatesDTO;
 import ru.itmo.model.Coordinates;
+import ru.itmo.websocket.OrganizationWebSocket;
 
 import java.util.List;
 
@@ -20,5 +21,6 @@ public class CoordinatesService {
 
     public void delete(Long id, Long replaceWithId) {
         repo.deleteWithReplace(id, replaceWithId);
+        OrganizationWebSocket.broadcast("{\"type\":\"UPDATE\"}");
     }
 }

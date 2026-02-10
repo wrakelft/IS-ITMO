@@ -5,7 +5,8 @@
     function start() {
         if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) return;
 
-        const wsUrl = "ws://localhost:8080/is_lab1-1.0-SNAPSHOT/ws/organizations";
+        const proto = location.protocol === "https:" ? "wss:" : "ws:";
+        const wsUrl = `${proto}//${location.host}/is_lab1-1.0-SNAPSHOT/ws/organizations`;
         socket = new WebSocket(wsUrl);
 
         socket.onmessage = (e) => {

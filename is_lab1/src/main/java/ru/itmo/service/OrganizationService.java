@@ -72,12 +72,18 @@ public class OrganizationService {
     }
 
     public void fireAllEmployees(long orgId) {
-        organizationRepository.fireAllEmployees(orgId);
+        int updated = organizationRepository.fireAllEmployees(orgId);
+        if (updated == 0) {
+            throw new jakarta.ws.rs.NotFoundException("Organization " + orgId + " not found");
+        }
         OrganizationWebSocket.broadcast("{\"type\":\"FIRE_ALL\",\"id\":" + orgId + "}");
     }
 
     public void hireEmployee(long orgId) {
-        organizationRepository.hireEmployee(orgId);
+        int updated = organizationRepository.hireEmployee(orgId);
+        if (updated == 0) {
+            throw new jakarta.ws.rs.NotFoundException("Organization " + orgId + " not found");
+        }
         OrganizationWebSocket.broadcast("{\"type\":\"HIRE\",\"id\":" + orgId + "}");
     }
 }

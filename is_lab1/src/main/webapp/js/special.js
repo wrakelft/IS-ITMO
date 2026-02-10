@@ -88,7 +88,7 @@ async function fireAllFromRow(orgId) {
         await safeFetch(`${API_BASE}/${orgId}/fire-all`, { method: "PUT" });
         showOk(`Уволил всех в организации ${orgId}`);
     } catch (e) {
-        showError(`Не удалось уволить: ${e.message}`);
+        showError(`Не удалось уволить, организации не существует`);
     }
 }
 
@@ -97,7 +97,7 @@ async function hireFromRow(orgId) {
         await safeFetch(`${API_BASE}/${orgId}/hire`, { method: "PUT" });
         showOk(`Нанял сотрудника в организации ${orgId}`);
     } catch (e) {
-        showError(`Не удалось нанять: ${e.message}`);
+        showError(`Не удалось нанять, организации не существует`);
     }
 }
 

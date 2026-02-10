@@ -5,6 +5,7 @@ import jakarta.inject.Inject;
 import ru.itmo.db.AddressRepository;
 import ru.itmo.dto.AddressDTO;
 import ru.itmo.model.Address;
+import ru.itmo.websocket.OrganizationWebSocket;
 
 import java.util.List;
 
@@ -20,5 +21,6 @@ public class AddressService {
 
     public void delete(Long id, Long replaceWithId) {
         repo.deleteWithReplace(id, replaceWithId);
+        OrganizationWebSocket.broadcast("{\"type\":\"UPDATE\"}");
     }
 }

@@ -16,4 +16,14 @@
         <url-pattern>/api/*</url-pattern>
     </servlet-mapping>
 
+    <context-param>
+        <param-name>resteasy.validation.enable</param-name>
+        <param-value>false</param-value>
+    </context-param>
+
+    <context-param>
+        <param-name>resteasy.disable.validator</param-name>
+        <param-value>true</param-value>
+    </context-param>
+
 </web-app>
