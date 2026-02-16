@@ -1,0 +1,295 @@
+/* Основные стили для страницы */
+body {
+    background-color: #2a2a2a;
+    color: #f0f0f0;
+    font-family: Arial, sans-serif;
+}
+
+/* Заголовок */
+header {
+    background-color: #333;
+    padding: 15px;
+    text-align: center;
+}
+
+h1 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+/* Стиль фильтра */
+.filter-block {
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #444;
+    border-radius: 5px;
+}
+
+.filter-block input {
+    padding: 5px;
+    margin-right: 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+table, th, td {
+    border: 1px solid #555;
+}
+
+th, td {
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #444;
+}
+
+tr:nth-child(even) {
+    background-color: #333;
+}
+
+/* Стиль пагинации */
+#pagination {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+}
+
+#pagination button {
+    padding: 10px 18px;
+    border-radius: 10px;
+}
+
+.form-row {
+    margin-bottom: 15px;
+}
+
+.form-row label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.form-row input,
+.form-row select {
+    width: 100%;
+    padding: 8px;
+    background-color: #333;
+    color: #f0f0f0;
+    border: 1px solid #555;
+    border-radius: 5px;
+}
+
+/* Стиль для кнопок */
+button.primary {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+button.primary:hover {
+    background-color: #45a049;
+}
+
+button.danger {
+    padding: 10px 20px;
+    background-color: #D32F2F;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+button.danger:hover {
+    background-color: #c62828;
+}
+
+/* Стиль для ошибок */
+.error {
+    color: #D32F2F;
+    background-color: #f8d7da;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.info {
+    color: #00796B;
+    background-color: #b2dfdb;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+/* затемнённый фон поверх всей страницы */
+.modal {
+    position: fixed;
+    inset: 0; /* top:0; right:0; bottom:0; left:0 */
+    background: rgba(0, 0, 0, 0.5);
+    display: none;              /* по умолчанию скрыто, показ в JS */
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 60px;          /* чтобы окно было чуть ниже верхнего края */
+    z-index: 1000;
+}
+
+/* сама «карточка» окна */
+.modal-content {
+    background: #222;           /* под цвет тёмной таблицы, если у тебя dark theme */
+    color: #fff;
+    padding: 20px 24px;
+    border-radius: 8px;
+    min-width: 380px;
+    max-width: 600px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+    position: relative;
+}
+
+/* крестик закрытия */
+.modal-close {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    border: none;
+    background: transparent;
+    font-size: 22px;
+    cursor: pointer;
+    color: #aaa;
+}
+
+.modal-close:hover {
+    color: #fff;
+}
+
+/* сам диалог */
+.modal-dialog {
+    background: #1f1f1f;
+    border-radius: 12px;
+    padding: 0;
+    width: 600px;
+    max-width: 90vw;
+
+    /* вот это главное: */
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* чтобы скроллилась только .modal-body */
+}
+
+/* контент формы, который будет скроллиться */
+.modal-body {
+    padding: 16px 24px 24px;
+    overflow-y: auto;      /* вертикальный скролл внутри */
+}
+
+/* шапка и футер фикс по высоте */
+.modal-header,
+.modal-footer {
+    padding: 16px 24px;
+    flex-shrink: 0;        /* чтобы не сжимались */
+}
+
+/* form-row в одну линию: label + input + button */
+.form-row.inline {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.form-row.inline label {
+    margin-bottom: 0;
+    white-space: nowrap;
+    min-width: 140px;
+}
+
+.form-row.inline input,
+.form-row.inline select {
+    width: auto;
+    flex: 1;
+}
+
+.form-row.inline button {
+    white-space: nowrap;
+}
+
+.card {
+    background-color: #444;
+    border-radius: 8px;
+    padding: 14px 16px;
+}
+
+button {
+    padding: 10px 16px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    background: #3b3b3b;
+    color: #f0f0f0;
+    transition: transform 0.05s ease, filter 0.15s ease;
+}
+
+button:hover {
+    filter: brightness(1.07);
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+button.primary {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+    color: white;
+}
+button.primary:hover { background-color: #45a049; }
+
+button.secondary {
+    background-color: #3a3a3a;
+    border-color: #555;
+    color: #f0f0f0;
+}
+button.secondary:hover { background-color: #4a4a4a; }
+
+button.danger {
+    background-color: #D32F2F;
+    border-color: #D32F2F;
+    color: white;
+}
+button.danger:hover { background-color: #c62828; }
+
+/* маленькие кнопки в таблице */
+table button {
+    padding: 6px 10px;
+    border-radius: 7px;
+    font-size: 0.9rem;
+}
+
+.toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+table { width: 100%; }
+th, td { vertical-align: top; }
+
+
+
+
+
