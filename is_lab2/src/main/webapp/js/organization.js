@@ -427,6 +427,61 @@ function isFiniteNumber(v) {
     return Number.isFinite(n);
 }
 
+async function importOrganizations() {
+    const input = document.getElementById("importFile");
+    const status = document.getElementById("importStatus");
+
+    const setStatus = (text, isError = false) => {
+        if (!status) return;
+        status.textContent = text || "";
+        status.classList.toggle("error", !!isError);
+        status.classList.toggle("info", !isError && !!text);
+    };
+
+    const file = input?.files?.[0];
+    if (!file) {
+        setStatus("Выбери .json файл", true);
+        return;
+    }
+
+    const fd = new FormData();
+    fd.append("file", file);
+
+    try {
+        setStatus("Загружаю...", false);
+
+        const resp = await fetch("api/import/organizations", {
+            method: "POST",
+            body: fd
+        });
+
+        const text = await resp.text().catch(() => "");
+        let data = {};
+        try { data = text ? JSON.parse(text) : {}; } catch { data = { message: text }; }
+
+        if (!resp.ok) {
+            // твой бэк сейчас кидает BadRequestException с текстом — вытащим его
+            const msg = data?.message || text || `HTTP ${resp.status}`;
+            setStatus("Импорт не ок: " + msg, true);
+            return;
+        }
+
+        const added = data?.addedCount ?? 0;
+        setStatus(`Готово добавлено: ${added}`, false);
+
+        // обновим таблицу
+        loadTableData();
+
+        // сбросим input
+        input.value = "";
+
+    } catch (e) {
+        console.error(e);
+        setStatus("Ошибка импорта (см. консоль)", true);
+    }
+}
+
+
 window.applyFilter = applyFilter;
 window.resetFilter = resetFilter;
 window.applySort = applySort;
@@ -439,5 +494,6 @@ window.previousPage = previousPage;
 window.nextPage = nextPage;
 window.editOrganization = editOrganization;
 window.deleteOrganization = deleteOrganization;
+window.importOrganizations = importOrganizations;
 
 

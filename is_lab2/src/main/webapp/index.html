@@ -54,10 +54,17 @@
 
 
     <!-- Кнопка создания новой организации -->
-    <div class="toolbar" style="margin-top: 10px;">
+    <div class="toolbar toolbar-row">
         <button class="primary" onclick="startCreateOrganization()">Создать новую организацию</button>
-        <button class="primary" onclick="location.href = 'special.html'">Спец-операции</button>
-        <button class="secondary" onclick="location.href = 'refs.html'">Адреса/Координаты</button>
+        <button class="primary" onclick="location.href='special.html'">Спец-операции</button>
+        <button class="secondary" onclick="location.href='refs.html'">Адреса/Координаты</button>
+
+        <div class="import-inline">
+            <span class="import-label">Импорт (json):</span>
+            <input id="importFile" type="file" accept=".json,application/json">
+            <button class="primary" onclick="importOrganizations()">Загрузить</button>
+            <span id="importStatus"></span>
+        </div>
     </div>
 
     <!-- Таблица организаций -->

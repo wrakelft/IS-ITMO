@@ -30,42 +30,7 @@ public class OrganizationRepository {
         try (Session session = hibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();
             try {
-                Organization org = organizationMapper.toNewForCreate(dto);
-                Coordinates coords;
-                if(dto.getCoordinatesId() != null) {
-                    coords = session.get(Coordinates.class, dto.getCoordinatesId());
-                    if (coords == null) throw new RuntimeException("Coordinates not found");
-                } else {
-                    coords = coordinatesRepository.createFromDto(dto.getCoordinates(), session);
-                }
-                org.setCoordinates(coords);
-                if (org.getCreationDate() == null) {
-                    org.setCreationDate(LocalDateTime.now());
-                }
-
-                Address official;
-                if (dto.getOfficialAddressId() != null) {
-                    official = session.get(Address.class, dto.getOfficialAddressId());
-                    if (official == null) throw new RuntimeException("Official address not found");
-                } else {
-                    official = addressRepository.createFromDtoInSession(dto.getOfficialAddress(), session);
-                }
-                org.setOfficialAddress(official);
-
-                Address postal = null;
-                if (dto.getPostalAddressId() != null && dto.getPostalAddress() != null) {
-                    throw new RuntimeException("Provide only one of postalAddressId or postalAddress");
-                }
-                if (dto.getPostalAddressId() != null) {
-                    postal = session.get(Address.class, dto.getPostalAddressId());
-                    if (postal == null) throw new RuntimeException("Postal address not found");
-                }
-                else if (dto.getPostalAddress() != null) {
-                    postal = addressRepository.createFromDtoInSession(dto.getPostalAddress(), session);
-                }
-                org.setPostalAddress(postal);
-
-                session.save(org);
+                Organization org = createFromDtoInSession(dto, session);
                 tx.commit();
                 return org;
             } catch (RuntimeException e) {
@@ -73,6 +38,46 @@ public class OrganizationRepository {
                 throw e;
             }
         }
+    }
+
+    public Organization createFromDtoInSession(OrganizationRequestDTO dto, Session session) {
+        Organization org = organizationMapper.toNewForCreate(dto);
+        Coordinates coords;
+        if(dto.getCoordinatesId() != null) {
+            coords = session.get(Coordinates.class, dto.getCoordinatesId());
+            if (coords == null) throw new RuntimeException("Coordinates not found");
+        } else {
+            coords = coordinatesRepository.createFromDto(dto.getCoordinates(), session);
+        }
+        org.setCoordinates(coords);
+        if (org.getCreationDate() == null) {
+            org.setCreationDate(LocalDateTime.now());
+        }
+
+        Address official;
+        if (dto.getOfficialAddressId() != null) {
+            official = session.get(Address.class, dto.getOfficialAddressId());
+            if (official == null) throw new RuntimeException("Official address not found");
+        } else {
+            official = addressRepository.createFromDtoInSession(dto.getOfficialAddress(), session);
+        }
+        org.setOfficialAddress(official);
+
+        Address postal = null;
+        if (dto.getPostalAddressId() != null && dto.getPostalAddress() != null) {
+            throw new RuntimeException("Provide only one of postalAddressId or postalAddress");
+        }
+        if (dto.getPostalAddressId() != null) {
+            postal = session.get(Address.class, dto.getPostalAddressId());
+            if (postal == null) throw new RuntimeException("Postal address not found");
+        }
+        else if (dto.getPostalAddress() != null) {
+            postal = addressRepository.createFromDtoInSession(dto.getPostalAddress(), session);
+        }
+        org.setPostalAddress(postal);
+
+        session.save(org);
+        return org;
     }
 
 
