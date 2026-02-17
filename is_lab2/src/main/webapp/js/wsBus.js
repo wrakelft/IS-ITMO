@@ -6,7 +6,8 @@
         if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) return;
 
         const proto = location.protocol === "https:" ? "wss:" : "ws:";
-        const wsUrl = `${proto}//${location.host}/is_lab1-1.0-SNAPSHOT/ws/organizations`;
+        const CONTEXT = location.pathname.split("/")[1];
+        const wsUrl = `${proto}//${location.host}/${CONTEXT}/ws/organizations`;
         socket = new WebSocket(wsUrl);
 
         socket.onmessage = (e) => {

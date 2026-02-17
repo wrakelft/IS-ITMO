@@ -1,5 +1,6 @@
 package ru.itmo.db;
 
+import jakarta.ws.rs.WebApplicationException;
 import ru.itmo.dto.OrganizationRequestDTO;
 import ru.itmo.mapper.OrganizationMapper;
 import ru.itmo.model.Address;
@@ -45,7 +46,7 @@ public class OrganizationRepository {
         Coordinates coords;
         if(dto.getCoordinatesId() != null) {
             coords = session.get(Coordinates.class, dto.getCoordinatesId());
-            if (coords == null) throw new RuntimeException("Coordinates not found");
+            if (coords == null) throw new WebApplicationException("Координаты не найдены", 400);
         } else {
             coords = coordinatesRepository.createFromDto(dto.getCoordinates(), session);
         }
@@ -57,7 +58,7 @@ public class OrganizationRepository {
         Address official;
         if (dto.getOfficialAddressId() != null) {
             official = session.get(Address.class, dto.getOfficialAddressId());
-            if (official == null) throw new RuntimeException("Official address not found");
+            if (official == null) throw new WebApplicationException("Официальный адрес не найден", 400);
         } else {
             official = addressRepository.createFromDtoInSession(dto.getOfficialAddress(), session);
         }
@@ -65,11 +66,11 @@ public class OrganizationRepository {
 
         Address postal = null;
         if (dto.getPostalAddressId() != null && dto.getPostalAddress() != null) {
-            throw new RuntimeException("Provide only one of postalAddressId or postalAddress");
+            throw new WebApplicationException("Укажите адреса", 400);
         }
         if (dto.getPostalAddressId() != null) {
             postal = session.get(Address.class, dto.getPostalAddressId());
-            if (postal == null) throw new RuntimeException("Postal address not found");
+            if (postal == null) throw new RuntimeException("Почтовый адрес не найден");
         }
         else if (dto.getPostalAddress() != null) {
             postal = addressRepository.createFromDtoInSession(dto.getPostalAddress(), session);
@@ -82,7 +83,7 @@ public class OrganizationRepository {
 
 
     public Organization findById(Long id) {
-        Objects.requireNonNull(id, "id must not be null");
+        Objects.requireNonNull(id, "id не может быть 0");
         try (Session session = hibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery("""
                 select distinct o
@@ -115,14 +116,14 @@ public class OrganizationRepository {
             Transaction tx = session.beginTransaction();
             try {
                 Organization existing = session.get(Organization.class, id);
-                if (existing == null) throw new RuntimeException("Organization not found");
+                if (existing == null) throw new WebApplicationException("Организация не найдена", 400);
                 organizationMapper.applyBasicToExisting(dto, existing);
 
                 if (dto.getCoordinatesId() != null || dto.getCoordinates() != null) {
                     Coordinates coords;
                     if (dto.getCoordinatesId() != null) {
                         coords = session.get(Coordinates.class, dto.getCoordinatesId());
-                        if (coords == null) throw new RuntimeException("Coordinates not found");
+                        if (coords == null) throw new WebApplicationException("Координаты не найдены", 400);
                     } else {
                         coords = coordinatesRepository.createFromDto(dto.getCoordinates(), session);
                     }
@@ -132,7 +133,7 @@ public class OrganizationRepository {
                     Address official;
                     if (dto.getOfficialAddressId() != null) {
                         official = session.get(Address.class, dto.getOfficialAddressId());
-                        if (official == null) throw new RuntimeException("Official address not found");
+                        if (official == null) throw new WebApplicationException("Официальный адрес не найден", 400);
                     } else {
                         official = addressRepository.createFromDtoInSession(dto.getOfficialAddress(), session);
                     }
@@ -143,7 +144,7 @@ public class OrganizationRepository {
 
                     if (dto.getPostalAddressId() != null) {
                         postal = session.get(Address.class, dto.getPostalAddressId());
-                        if (postal == null) throw new RuntimeException("Postal address not found");
+                        if (postal == null) throw new RuntimeException("Почтовый адрес не найден");
                     } else if (dto.getPostalAddress() != null) {
                         postal = addressRepository.createFromDtoInSession(dto.getPostalAddress(), session);
                     } else {
@@ -160,7 +161,7 @@ public class OrganizationRepository {
     }
 
     public void delete(Long id) {
-        Objects.requireNonNull(id, "id is null");
+        Objects.requireNonNull(id, "id 0");
         try (Session session = hibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();
             try {

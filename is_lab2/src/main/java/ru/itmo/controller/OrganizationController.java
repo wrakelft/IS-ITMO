@@ -26,12 +26,8 @@ public class OrganizationController {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response create(OrganizationRequestDTO dto) {
-        try {
-            Organization created = organizationService.createOrganization(dto);
-            return Response.status(Response.Status.CREATED).entity(organizationMapper.toResponse(created)).build();
-        } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
-        }
+        Organization created = organizationService.createOrganization(dto);
+        return Response.status(Response.Status.CREATED).entity(organizationMapper.toResponse(created)).build();
     }
 
     @GET
@@ -40,10 +36,9 @@ public class OrganizationController {
     public Response findById(@PathParam("id") Long id) {
         Organization organization = organizationService.findById(id);
         if (organization == null) {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            throw new NotFoundException("Organization " + id + " not found");
         }
-        OrganizationResponseDTO response = organizationMapper.toResponse(organization);
-        return Response.ok(response).build();
+        return Response.ok(organizationMapper.toResponse(organization)).build();
     }
 
     @GET
@@ -61,14 +56,8 @@ public class OrganizationController {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response update(@PathParam("id") Long id, OrganizationRequestDTO dto) {
-        try {
-            organizationService.updateOrganizationDto(id, dto);
-            return Response.noContent().build();
-        } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
-        } catch (RuntimeException e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
-        }
+        organizationService.updateOrganizationDto(id, dto);
+        return Response.noContent().build();
     }
 
     @DELETE
@@ -91,9 +80,7 @@ public class OrganizationController {
     @Produces(MediaType.APPLICATION_JSON)
     public Response minRatingOrg() {
         Organization org = organizationService.getWithMinRating();
-        if (org == null) {
-            return Response.status(Response.Status.NOT_FOUND).entity("No organizations").build();
-        }
+        if (org == null) throw new NotFoundException("No organizations");
         OrganizationResponseDTO response = organizationMapper.toResponse(org);
         return Response.ok(response).build();
     }

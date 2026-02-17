@@ -25,7 +25,7 @@ public class AddressRepository {
 
     public Address createFromDtoInSession(AddressDTO dto, Session s) {
         if (dto == null || dto.getStreet() == null || dto.getStreet().trim().isEmpty())
-            throw new WebApplicationException("street is required", 400);
+            throw new WebApplicationException("Требуется улица", 400);
 
         String street = dto.getStreet().trim();
         String streetNorm = street.toLowerCase();

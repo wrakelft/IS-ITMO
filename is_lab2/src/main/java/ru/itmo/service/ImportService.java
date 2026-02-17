@@ -28,7 +28,7 @@ public class ImportService {
 
     public int importOrganizationJsonArray(InputStream jsonStream) {
         if (jsonStream == null) {
-            throw new BadRequestException("file is required");
+            throw new BadRequestException("Требуется файл");
         }
 
         try (Session session = hibernateUtil.getSessionFactory().openSession()) {
@@ -38,7 +38,7 @@ public class ImportService {
 
             try (JsonParser parser = mapper.getFactory().createParser(jsonStream)) {
                 if (parser.nextToken() != JsonToken.START_ARRAY) {
-                    throw new BadRequestException("Expected JSON array at root: [ {...}, {...} ]");
+                    throw new BadRequestException("Ожидаемый JSON массив: [ {...}, {...} ]");
                 }
 
                 while (parser.nextToken() != JsonToken.END_ARRAY) {
@@ -61,10 +61,10 @@ public class ImportService {
                 return added;
             } catch (RuntimeException e) {
                 safeRollback(tx);
-                throw new BadRequestException("Import failed at element #" + (index + 1) + ": " + humanMsg(e));
+                throw new BadRequestException("Ошибка импорта на элементе #" + (index + 1));
             } catch (IOException e) {
                 safeRollback(tx);
-                throw new BadRequestException("Invalid JSON at element #" + (index + 1) + ": " + humanMsg(e));
+                throw new BadRequestException("Ошибка формата JSON на элементе #" + (index + 1));
             }
         }
     }
@@ -73,10 +73,5 @@ public class ImportService {
         if (tx != null) {
             try {tx.rollback();} catch (Exception ignore) {}
         }
-    }
-
-    private String humanMsg(Exception e) {
-        String m = e.getMessage();
-        return (m != null && !m.isBlank()) ? m : e.getClass().getSimpleName();
     }
 }

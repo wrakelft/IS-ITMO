@@ -65,14 +65,18 @@ function getProcessedOrganizations() {
         if (filterState.field === "id") {
             const idNum = Number(fvRaw);
             if (!Number.isFinite(idNum)) {
-                showError("Id должен быть числом")
+                showGlobalError("Id должен быть числом")
                 list = [];
             } else {
+                showGlobalError("");
                 list = list.filter(org => Number(org.id) === idNum);
             }
         } else {
+            showGlobalError("");
             list = list.filter(org => norm(getFieldValue(org, filterState.field)) === fv);
         }
+    } else {
+        showGlobalError("");
     }
 
     const dirMul = sortState.dir === "desc" ? -1 : 1;
@@ -147,7 +151,7 @@ function editOrganization(org) {
 
     document.getElementById('organizationPostalAddress').value =
         org.postalAddress && org.postalAddress.street ? org.postalAddress.street : '';
-
+    clearFormError();
     document.getElementById('organizationEditSection').style.display = 'flex';
 }
 
@@ -168,7 +172,6 @@ function saveOrganization() {
     const officialAddress = normalizeStr(document.getElementById('organizationAddress').value);
     const postalAddress = normalizeStr(document.getElementById('organizationPostalAddress').value);
 
-    // ---- Front validation (вместо alert) ----
     if (!name) return showFormError("Название обязательно");
     if (!officialAddress) return showFormError("Адрес (official) обязателен");
 
@@ -200,7 +203,6 @@ function saveOrganization() {
         type
     };
 
-    // ---- твоя текущая логика привязки refs ----
     const coordsChanged = (originalRefs.coordinatesX !== xNum || originalRefs.coordinatesY !== yNum);
 
     if (!isUpdate || coordsChanged) {
@@ -220,11 +222,9 @@ function saveOrganization() {
     const postalChanged = originalRefs.postalStreet !== postalAddress;
 
     if (!isUpdate) {
-        // postal может быть пустым => просто не отправляем
         if (postalAddress) payload.postalAddress = { street: postalAddress };
     } else {
         if (postalChanged) {
-            // если очистили поле => явно шлём null
             payload.postalAddress = postalAddress ? { street: postalAddress } : null;
         } else {
             if (originalRefs.postalAddressId != null) payload.postalAddressId = originalRefs.postalAddressId;
@@ -239,19 +239,14 @@ function saveOrganization() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
     })
-        .then(async (response) => {
-            const text = await response.text().catch(() => "");
-
-            if (!response.ok) {
-                // вот тут теперь показываем ЧТО ИМЕННО вернул бэк
-                const msg = (text || `HTTP ${response.status}`).trim();
+        .then(async (resp) => {
+            const parsed = await parseResponse(resp);
+            if (!resp.ok) {
+                const msg = pickErrorMessage(resp, parsed);
                 showFormError(msg);
                 throw new Error(msg);
             }
-
-            // успех: тело может быть пустым
-            if (!text) return null;
-            try { return JSON.parse(text); } catch { return text; }
+            return parsed.data ?? parsed.text ?? null;
         })
         .then(() => {
             clearFormError();
@@ -278,15 +273,15 @@ function deleteOrganization(id) {
     fetch(`api/organizations/${id}`, {
         method: 'DELETE'
     })
-        .then(response => {
-            if (!response.ok && response.status !== 204) {
-                throw new Error('Ошибка удаления');
-            }
-            console.log('Организация удалена:', id);
-            loadTableData();
+        .then(async (resp) => {
+            if (resp.ok || resp.status === 204) return;
+            const parsed = await parseResponse(resp);
+            throw new Error(pickErrorMessage(resp, parsed));
         })
+        .then(() => loadTableData())
         .catch((error) => {
             console.error('Ошибка при удалении организации:', error);
+            alert("Удаление не ок: " + error.message);
         });
 }
 
@@ -311,13 +306,20 @@ function nextPage() {
 
 function loadTableData() {
     fetch('api/organizations')
-        .then(response => response.json())
+        .then(async (resp) => {
+            const parsed = await parseResponse(resp);
+            if (!resp.ok) {
+                throw new Error(pickErrorMessage(resp, parsed));
+            }
+            return parsed.data ?? [];
+        })
         .then(data => {
-            allOrganizations = data;
+            allOrganizations = Array.isArray(data) ? data : [];
             renderTable();
         })
         .catch((error) => {
             console.error('Ошибка при загрузке данных организаций:', error);
+            showGlobalError("Загрузка не ок: " + error.message);
         });
 }
 
@@ -422,6 +424,13 @@ function clearFormError() {
     box.style.display = "none";
 }
 
+function showGlobalError(msg) {
+    const box = document.getElementById("organizationGlobalError");
+    if (!box) return console.error(msg);
+    box.textContent = msg;
+    box.style.display = msg ? "block" : "none";
+}
+
 function isFiniteNumber(v) {
     const n = Number(v);
     return Number.isFinite(n);
@@ -455,24 +464,18 @@ async function importOrganizations() {
             body: fd
         });
 
-        const text = await resp.text().catch(() => "");
-        let data = {};
-        try { data = text ? JSON.parse(text) : {}; } catch { data = { message: text }; }
+        const parsed = await parseResponse(resp);
 
         if (!resp.ok) {
-            // твой бэк сейчас кидает BadRequestException с текстом — вытащим его
-            const msg = data?.message || text || `HTTP ${resp.status}`;
+            const msg = pickErrorMessage(resp, parsed);
             setStatus("Импорт не ок: " + msg, true);
             return;
         }
 
-        const added = data?.addedCount ?? 0;
+        const added = parsed?.data?.addedCount ?? 0;
         setStatus(`Готово добавлено: ${added}`, false);
 
-        // обновим таблицу
         loadTableData();
-
-        // сбросим input
         input.value = "";
 
     } catch (e) {
@@ -480,6 +483,34 @@ async function importOrganizations() {
         setStatus("Ошибка импорта (см. консоль)", true);
     }
 }
+
+async function parseResponse(resp) {
+    const ct = resp.headers.get("content-type") || "";
+    let data = null;
+    let text = "";
+
+    if (ct.includes("application/json")) {
+        data = await resp.json().catch(() => null);
+    } else {
+        text = await resp.text().catch(() => "");
+        const t = (text || "").trim();
+        if (t.startsWith("{") || t.startsWith("[")) {
+            try { data = JSON.parse(t); } catch {}
+        }
+    }
+
+    return { data, text };
+}
+
+function pickErrorMessage(resp, parsed) {
+    return (
+        parsed?.data?.message ||
+        parsed?.data?.error ||
+        (parsed?.text ? parsed.text.trim() : "") ||
+        `HTTP ${resp.status}`
+    );
+}
+
 
 
 window.applyFilter = applyFilter;

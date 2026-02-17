@@ -1,4 +1,5 @@
-const API_BASE = "/is_lab1-1.0-SNAPSHOT/api/organizations";
+const CONTEXT = "/" + location.pathname.split("/")[1];
+const API_BASE = `${CONTEXT}/api/organizations`;
 
 function showError(msg) {
     const el = document.getElementById("specialGlobalError");
@@ -43,7 +44,7 @@ async function loadAverageRating() {
 
 async function loadMinRatingOrg() {
     try {
-        const org = await safeFetch(`${API_BASE}/min-rating`, { allow404: true });
+        const org = await safeFetch(`${API_BASE}/min-rating`, {},{ allow404: true });
 
         renderOrganizationsToTbody("minRatingTableBody", org ? [org] : []);
         showOk(org ? "Готово" : "Организаций нет");
@@ -157,7 +158,7 @@ function renderOrganizationsToTbody(tbodyId, organizations) {
 wsBus.start();
 wsBus.on((msg) => {
     if (["FIRE_ALL","HIRE","CREATE","UPDATE","DELETED"].includes(msg.type)) {
-        showOk(`Событие: ${msg.type} id=${msg.id ?? ""}`);
+        showOk(`Событие: ${msg.type}`);
 
         if (document.getElementById("minRatingTableBody")) loadMinRatingOrg();
         if (document.getElementById("avgRatingResult")) loadAverageRating();

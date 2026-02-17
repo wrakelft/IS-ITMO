@@ -25,18 +25,17 @@ public class OrganizationRequestValidator {
     }
 
     public void validateForUpdate(OrganizationRequestDTO dto) {
-        // базовые числовые ограничения проверяем только если поле прислали
         if (dto.getAnnualTurnover() != null && dto.getAnnualTurnover() <= 0)
-            throw new IllegalArgumentException("annualTurnover must be > 0");
+            throw new IllegalArgumentException("Оборот должен быть > 0");
 
         if (dto.getEmployeesCount() != null && dto.getEmployeesCount() < 0)
-            throw new IllegalArgumentException("employeesCount must be >= 0");
+            throw new IllegalArgumentException("Количество сотрудников должно быть >= 0");
 
         if (dto.getRating() != null && dto.getRating() <= 0)
-            throw new IllegalArgumentException("rating must be > 0");
+            throw new IllegalArgumentException("Рейтинг должен быть > 0");
 
         if (dto.getName() != null && dto.getName().trim().isEmpty())
-            throw new IllegalArgumentException("name must not be empty");
+            throw new IllegalArgumentException("Имя не может быть пустым");
 
         // XOR rules only if something from pair is present
         xorOptional("coordinates", dto.getCoordinates(), "coordinatesId", dto.getCoordinatesId());
@@ -50,26 +49,26 @@ public class OrganizationRequestValidator {
 
     private void baseValidate(OrganizationRequestDTO dto) {
         if (dto.getName() == null || dto.getName().trim().isEmpty())
-            throw new IllegalArgumentException("name is required");
+            throw new IllegalArgumentException("Требуется название");
 
         if (dto.getAnnualTurnover() == null || dto.getAnnualTurnover() <= 0)
-            throw new IllegalArgumentException("annualTurnover is required and must be > 0");
+            throw new IllegalArgumentException("Оборот должен быть > 0");
 
         if (dto.getEmployeesCount() == null || dto.getEmployeesCount() < 0)
-            throw new IllegalArgumentException("employeesCount is required and must be >= 0");
+            throw new IllegalArgumentException("Количество сотрудников должно быть >= 0");
 
         if (dto.getRating() == null || dto.getRating() <= 0)
-            throw new IllegalArgumentException("rating is required and must be > 0");
+            throw new IllegalArgumentException("Рейтинг должен быть > 0");
     }
 
     private void validateCoordinatesDto(CoordinatesDTO c) {
         if (c.getX() == null || c.getY() == null)
-            throw new IllegalArgumentException("coordinates.x and coordinates.y are required");
+            throw new IllegalArgumentException("Требуются координата.x и координата.y");
     }
 
     private void validateAddressDto(AddressDTO a, String field) {
         if (a.getStreet() == null || a.getStreet().trim().isEmpty())
-            throw new IllegalArgumentException(field + ".street is required");
+            throw new IllegalArgumentException(field + ".улица не указана");
     }
 
     private void xorRequired(String aName, Object aVal, String bName, Long bVal) {

@@ -26,13 +26,13 @@ public class CoordinatesRepository {
 
     public Coordinates createFromDto(CoordinatesDTO dto, Session s) {
         if (dto == null)
-            throw new WebApplicationException("body is required", 400);
+            throw new WebApplicationException("Требуются координаты", 400);
 
         if (dto.getX() == null)
-            throw new WebApplicationException("x is required", 400);
+            throw new WebApplicationException("Требуется координата.x", 400);
 
         if (dto.getY() == null)
-            throw new WebApplicationException("y is required", 400);
+            throw new WebApplicationException("Требуется координата.y", 400);
 
         Coordinates existing = s.createQuery("""
             select c from Coordinates c
