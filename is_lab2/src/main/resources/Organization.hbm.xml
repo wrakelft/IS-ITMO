@@ -22,7 +22,7 @@
         <property name="annualTurnover" type="double" column="annual_turnover" not-null="true"/>
         <property name="employeesCount" type="integer" column="employees_count" not-null="true"/>
         <property name="rating" type="integer" column="rating" not-null="true"/>
-        <property name="type" column="type" not-null="true" length="20">
+        <property name="type" column="type" not-null="true" length="64">
             <type name="org.hibernate.type.EnumType">
                 <param name="enumClass">ru.itmo.model.OrganizationType</param>
                 <param name="useNamed">true</param>

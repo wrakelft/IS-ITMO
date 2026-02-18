@@ -296,5 +296,37 @@ th, td { vertical-align: top; }
     line-height: 1;
 }
 
+.filter-block.filter-row{
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.filter-left{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+.filter-right{
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+}
+
+.role-switch{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+}
+
+
 
 

@@ -214,7 +214,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (window.wsBus) {
         wsBus.start();
         wsBus.on((msg) => {
-            if (["CREATE","UPDATE","DELETED"].includes(msg.type)) {
+            if (["CREATE","UPDATE","DELETED","IMPORT"].includes(msg.type)) {
                 showOk(`Событие: ${msg.type} id=${msg.id ?? ""}`);
                 loadAll();
             }

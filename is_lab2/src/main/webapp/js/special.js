@@ -157,7 +157,7 @@ function renderOrganizationsToTbody(tbodyId, organizations) {
 
 wsBus.start();
 wsBus.on((msg) => {
-    if (["FIRE_ALL","HIRE","CREATE","UPDATE","DELETED"].includes(msg.type)) {
+    if (["FIRE_ALL","HIRE","CREATE","UPDATE","DELETED","IMPORT"].includes(msg.type)) {
         showOk(`Событие: ${msg.type}`);
 
         if (document.getElementById("minRatingTableBody")) loadMinRatingOrg();

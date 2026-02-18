@@ -386,7 +386,9 @@ function renderTable() {
 
 
 document.addEventListener('DOMContentLoaded', () => {
+    applyViewCtxToUI();
     loadTableData();
+    loadImportHistory();
 
     const fieldSel = document.getElementById("filterField");
     const valInp = document.getElementById("filterValue");
@@ -402,8 +404,11 @@ document.addEventListener('DOMContentLoaded', () => {
 if (window.wsBus) {
     wsBus.start();
     wsBus.on((msg) => {
-        if (["CREATE","UPDATE","DELETED","FIRE_ALL","HIRE"].includes(msg.type)) {
+        if (["CREATE","UPDATE","DELETED","FIRE_ALL","HIRE","IMPORT"].includes(msg.type)) {
             loadTableData();
+        }
+        if (["IMPORT"].includes(msg.type)) {
+            loadImportHistory();
         }
     });
 }
@@ -459,7 +464,7 @@ async function importOrganizations() {
     try {
         setStatus("Загружаю...", false);
 
-        const resp = await fetch("api/import/organizations", {
+        const resp = await fetch(withCtxQuery("api/import/organizations"), {
             method: "POST",
             body: fd
         });
@@ -511,6 +516,105 @@ function pickErrorMessage(resp, parsed) {
     );
 }
 
+const VIEW_CTX_KEY = "viewCtx";
+
+function getViewCtx() {
+    try {
+        const raw = localStorage.getItem(VIEW_CTX_KEY);
+        const obj = raw ? JSON.parse(raw) : null;
+        const role = obj?.role === "ADMIN" ? "ADMIN" : "USER";
+        const username = (obj?.username ?? "guest").toString().trim() || "guest";
+        return { role, username };
+    } catch {
+        return { role: "USER", username: "guest" };
+    }
+}
+
+function setViewCtx(role, username) {
+    localStorage.setItem(VIEW_CTX_KEY, JSON.stringify({
+        role: role === "ADMIN" ? "ADMIN" : "USER",
+        username: (username ?? "guest").toString().trim() || "guest"
+    }));
+}
+
+function applyViewCtxToUI() {
+    const ctx = getViewCtx();
+    const roleSel = document.getElementById("viewRole");
+    const userInp = document.getElementById("viewUsername");
+    if (roleSel) roleSel.value = ctx.role;
+    if (userInp) userInp.value = ctx.username;
+}
+
+function onRoleChanged() {
+    const role = document.getElementById("viewRole")?.value || "USER";
+    const username = (document.getElementById("viewUsername")?.value || "guest").trim() || "guest";
+    setViewCtx(role, username);
+    loadImportHistory();
+}
+window.onRoleChanged = onRoleChanged;
+
+function withCtxQuery(path) {
+    const { role, username } = getViewCtx();
+    const sep = path.includes("?") ? "&" : "?";
+    return `${path}${sep}username=${encodeURIComponent(username)}&role=${encodeURIComponent(role)}`;
+}
+
+async function loadImportHistory() {
+    const body = document.getElementById("importHistoryBody");
+    if (!body) return;
+
+    try {
+        const resp = await fetch(withCtxQuery("api/import/history"), {
+            headers: { "Accept": "application/json" }
+        });
+
+        const parsed = await parseResponse(resp);
+        if (!resp.ok) throw new Error(pickErrorMessage(resp, parsed));
+
+        const list = Array.isArray(parsed.data) ? parsed.data : [];
+        renderImportHistory(list);
+    } catch (e) {
+        console.error(e);
+        renderImportHistory([]);
+    }
+}
+
+function renderImportHistory(list) {
+    const body = document.getElementById("importHistoryBody");
+    if (!body) return;
+
+    body.innerHTML = "";
+
+    const safe = (v) => (v ?? "").toString();
+    const fmtDate = (v) => v ? safe(v).substring(0, 19).replace("T", " ") : "";
+
+    list.forEach((op) => {
+        const status = safe(op.status);
+
+        const message =
+            status === "FAILED"
+                ? safe(op.message || "")
+                : "";
+
+        const added =
+            status === "SUCCESS" && op.addedCount != null
+                ? safe(op.addedCount)
+                : "";
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+      <td>${safe(op.id)}</td>
+      <td>${status}</td>
+      <td>${safe(op.username)}</td>
+      <td>${safe(op.role)}</td>
+      <td>${added}</td>
+      <td>${fmtDate(op.finishedAt)}</td>
+      <td class="msg">${message}</td>
+    `;
+        body.appendChild(tr);
+    });
+}
+
 
 
 window.applyFilter = applyFilter;
@@ -526,5 +630,4 @@ window.nextPage = nextPage;
 window.editOrganization = editOrganization;
 window.deleteOrganization = deleteOrganization;
 window.importOrganizations = importOrganizations;
-
-
+window.loadImportHistory = loadImportHistory;

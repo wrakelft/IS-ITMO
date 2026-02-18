@@ -26,5 +26,6 @@
         <mapping resource="Organization.hbm.xml"/>
         <mapping resource="Coordinates.hbm.xml"/>
         <mapping resource="Address.hbm.xml"/>
+        <mapping resource="ImportOperation.hbm.xml"/>
     </session-factory>
 </hibernate-configuration>
