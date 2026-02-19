@@ -1,5 +1,7 @@
 package ru.itmo.service;
 
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 import ru.itmo.dto.OrganizationRequestDTO;
 import ru.itmo.model.Organization;
 import ru.itmo.db.OrganizationRepository;
@@ -9,6 +11,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.util.List;
 
+import ru.itmo.util.HibernateUtil;
 import ru.itmo.validation.OrganizationRequestValidator;
 import ru.itmo.websocket.OrganizationWebSocket;
 
@@ -19,17 +22,33 @@ public class OrganizationService {
     @Inject
     private OrganizationRepository organizationRepository;
     @Inject
-    private AddressService addressService;
-    @Inject
-    private CoordinatesService coordinatesService;
+    private HibernateUtil hibernateUtil;
     @Inject
     private OrganizationRequestValidator validator;
 
     public Organization createOrganization(OrganizationRequestDTO dto) {
         validator.validateForCreate(dto);
-        Organization created = organizationRepository.createFromDto(dto);
-        OrganizationWebSocket.broadcast("{\"type\":\"CREATE\",\"id\":" + created.getId() + "}");
-        return created;
+        try (Session session = hibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = session.beginTransaction();
+            try {
+                Organization organization = organizationRepository.createFromDtoInSession(dto, session);
+
+                organizationRepository.ensureUniqueName(session, organization.getName(), null);
+
+                var c = organization.getCoordinates();
+                var a = organization.getOfficialAddress();
+                if (c != null && a != null) {
+                    organizationRepository.ensureUniqueAddressAndCoords(session, a.getStreet(), c.getX(), c.getY(), null);
+                }
+                session.save(organization);
+                tx.commit();
+                OrganizationWebSocket.broadcast("{\"type\":\"CREATE\",\"id\":" + organization.getId() + "}");
+                return organization;
+            } catch (RuntimeException e) {
+                tx.rollback();
+                throw e;
+            }
+        }
     }
 
     public Organization findById(Long id) {
@@ -42,21 +61,39 @@ public class OrganizationService {
 
     public void updateOrganizationDto(Long id, OrganizationRequestDTO dto) {
         validator.validateForUpdate(dto);
-        organizationRepository.updateFromDto(id, dto);
-        OrganizationWebSocket.broadcast("{\"type\":\"UPDATE\",\"id\":" + id + "}");
+
+        try (Session session = hibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = session.beginTransaction();
+            try {
+                Organization existing = organizationRepository.updateFromDtoInSession(id, dto, session);
+
+                if (existing == null) throw new IllegalArgumentException("Организация не найдена");
+
+                organizationRepository.ensureUniqueName(session, existing.getName(), id);
+
+                var c = existing.getCoordinates();
+                var a = existing.getOfficialAddress();
+                if (c != null && a != null) {
+                    organizationRepository.ensureUniqueAddressAndCoords(
+                            session, a.getStreet(), c.getX(), c.getY(), id
+                    );
+                }
+
+                session.flush();
+                tx.commit();
+
+                OrganizationWebSocket.broadcast("{\"type\":\"UPDATE\",\"id\":" + id + "}");
+            } catch (RuntimeException e) {
+                tx.rollback();
+                throw e;
+            }
+        }
     }
+
 
     public void deleteOrganization(Long id, boolean cascadeRelated) {
         organizationRepository.delete(id);
         OrganizationWebSocket.broadcast("{\"type\":\"DELETED\",\"id\":" + id + "}");
-    }
-
-    public List<Organization> findByCoordinatesId(Long coordinatesId) {
-        return organizationRepository.findByCoordinatesId(coordinatesId);
-    }
-
-    public List<Organization> findByOfficialAddressId(Long addressId) {
-        return organizationRepository.findByOfficialAddressId(addressId);
     }
 
     public Double getAverageRating() {

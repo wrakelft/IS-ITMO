@@ -25,7 +25,7 @@ public class AddressRepository {
 
     public Address createFromDtoInSession(AddressDTO dto, Session s) {
         if (dto == null || dto.getStreet() == null || dto.getStreet().trim().isEmpty())
-            throw new WebApplicationException("Требуется улица", 400);
+            throw new IllegalArgumentException("Требуется улица");
 
         String street = dto.getStreet().trim();
         String streetNorm = street.toLowerCase();
@@ -66,13 +66,37 @@ public class AddressRepository {
 
             if (used > 0 && replaceWithId == null) {
                 tx.rollback();
-                throw new WebApplicationException("Address is used. Provide replaceWith", 409);
+                throw new IllegalArgumentException("Address is used. Provide replaceWith");
             }
 
             if (used > 0) {
                 Address rep = s.get(Address.class, replaceWithId);
-                if (rep == null) { tx.rollback(); throw new WebApplicationException("Replacement not found", 404); }
-                if (rep.getId().equals(id)) { tx.rollback(); throw new WebApplicationException("replaceWith must differ", 400); }
+                if (rep == null) { tx.rollback(); throw new IllegalArgumentException("Replacement not found"); }
+                if (rep.getId().equals(id)) { tx.rollback(); throw new IllegalArgumentException("replaceWith must differ"); }
+
+                Long conflictOfficial = s.createQuery("""
+                    select count(o2.id)
+                    from Organization o2
+                    join o2.coordinates c2
+                    where o2.officialAddress.id = :newAddrId
+                      and exists (
+                          select 1
+                          from Organization o1
+                          join o1.coordinates c1
+                          where o1.officialAddress.id = :oldAddrId
+                            and c1.x = c2.x
+                            and c1.y = c2.y)
+                """, Long.class)
+                        .setParameter("oldAddrId", id)
+                        .setParameter("newAddrId", replaceWithId)
+                        .uniqueResult();
+
+                if (conflictOfficial != null && conflictOfficial > 0) {
+                    tx.rollback();
+                    throw new IllegalArgumentException(
+                            "Нельзя перепривязать: появится дубликат пары (officialAddress.street, coordinates.x, coordinates.y)"
+                    );
+                }
 
                 s.createQuery("update Organization o set o.officialAddress = :rep where o.officialAddress.id = :oldId")
                         .setParameter("rep", rep).setParameter("oldId", id).executeUpdate();

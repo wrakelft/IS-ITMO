@@ -2,7 +2,6 @@ package ru.itmo.db;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.WebApplicationException;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import ru.itmo.dto.CoordinatesDTO;
@@ -26,13 +25,13 @@ public class CoordinatesRepository {
 
     public Coordinates createFromDto(CoordinatesDTO dto, Session s) {
         if (dto == null)
-            throw new WebApplicationException("Требуются координаты", 400);
+            throw new IllegalArgumentException("Требуются координаты");
 
         if (dto.getX() == null)
-            throw new WebApplicationException("Требуется координата.x", 400);
+            throw new IllegalArgumentException("Требуется координата.x");
 
         if (dto.getY() == null)
-            throw new WebApplicationException("Требуется координата.y", 400);
+            throw new IllegalArgumentException("Требуется координата.y");
 
         Coordinates existing = s.createQuery("""
             select c from Coordinates c
@@ -71,13 +70,37 @@ public class CoordinatesRepository {
 
             if (usage > 0 && replaceWithId == null) {
                 tx.rollback();
-                throw new WebApplicationException("Coordinates is used. Provide replaceWith", 409);
+                throw new IllegalArgumentException("Coordinates is used. Provide replaceWith");
             }
 
             if (usage > 0) {
                 Coordinates rep = s.get(Coordinates.class, replaceWithId);
-                if (rep == null) { tx.rollback(); throw new WebApplicationException("Replacement not found", 404); }
-                if (rep.getId().equals(id)) { tx.rollback(); throw new WebApplicationException("replaceWith must differ", 400); }
+                if (rep == null) { tx.rollback(); throw new IllegalArgumentException("Replacement not found"); }
+                if (rep.getId().equals(id)) { tx.rollback(); throw new IllegalArgumentException("replaceWith must differ"); }
+
+                Long conflict = s.createQuery("""
+                    select count(o.id)
+                    from Organization o
+                    join o.officialAddress a
+                    where o.coordinates.id = :newId
+                      and lower(trim(a.street)) in (
+                          select lower(trim(a1.street))
+                          from Organization o1
+                          join o1.officialAddress a1
+                          where o1.coordinates.id = :oldId)
+                """, Long.class)
+                        .setParameter("oldId", id)
+                        .setParameter("newId", replaceWithId)
+                        .uniqueResult();
+
+                if (conflict != null && conflict > 0) {
+                    tx.rollback();
+                    throw new IllegalArgumentException(
+                            "Нельзя перепривязать: появится дубликат пары (officialAddress.street, coordinates.x, coordinates.y)"
+                    );
+                }
+
+
 
                 s.createQuery("update Organization o set o.coordinates = :rep where o.coordinates.id = :oldId")
                         .setParameter("rep", rep)

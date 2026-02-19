@@ -12,13 +12,10 @@ public class OrganizationRequestValidator {
 
         xorRequired("coordinates", dto.getCoordinates(), "coordinatesId", dto.getCoordinatesId());
 
-        // Official address required: either officialAddress or officialAddressId
         xorRequired("officialAddress", dto.getOfficialAddress(), "officialAddressId", dto.getOfficialAddressId());
 
-        // Postal address optional: but if any provided, not both
         xorOptional("postalAddress", dto.getPostalAddress(), "postalAddressId", dto.getPostalAddressId());
 
-        // If DTO path chosen, validate inner content
         if (dto.getCoordinates() != null) validateCoordinatesDto(dto.getCoordinates());
         if (dto.getOfficialAddress() != null) validateAddressDto(dto.getOfficialAddress(), "officialAddress");
         if (dto.getPostalAddress() != null) validateAddressDto(dto.getPostalAddress(), "postalAddress");
@@ -74,7 +71,7 @@ public class OrganizationRequestValidator {
     private void xorRequired(String aName, Object aVal, String bName, Long bVal) {
         boolean a = aVal != null;
         boolean b = bVal != null;
-        if (a == b) { // both true or both false
+        if (a == b) {
             throw new IllegalArgumentException("Provide exactly one of " + aName + " or " + bName);
         }
     }

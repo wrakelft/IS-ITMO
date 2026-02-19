@@ -15,6 +15,7 @@ import ru.itmo.dto.ImportOperationResponseDTO;
 import ru.itmo.dto.OrganizationRequestDTO;
 import ru.itmo.mapper.ImportOperationMapper;
 import ru.itmo.model.ImportOperation;
+import ru.itmo.model.Organization;
 import ru.itmo.util.HibernateUtil;
 import ru.itmo.validation.OrganizationRequestValidator;
 import ru.itmo.websocket.OrganizationWebSocket;
@@ -56,7 +57,19 @@ public class ImportService {
 
                     validator.validateForCreate(dto);
 
-                    organizationRepository.createFromDtoInSession(dto, session);
+                    Organization org = organizationRepository.createFromDtoInSession(dto, session);
+
+                    organizationRepository.ensureUniqueName(session, org.getName(), null);
+
+                    var c = org.getCoordinates();
+                    var a = org.getOfficialAddress();
+                    if (c != null && a != null) {
+                        organizationRepository.ensureUniqueAddressAndCoords(
+                                session, a.getStreet(), c.getX(), c.getY(), null
+                        );
+                    }
+
+                    session.save(org);
                     added++;
 
                     if (added % 100 == 0) {

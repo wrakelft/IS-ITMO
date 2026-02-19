@@ -1,6 +1,5 @@
 package ru.itmo.db;
 
-import jakarta.ws.rs.WebApplicationException;
 import ru.itmo.dto.OrganizationRequestDTO;
 import ru.itmo.mapper.OrganizationMapper;
 import ru.itmo.model.Address;
@@ -27,26 +26,12 @@ public class OrganizationRepository {
     @Inject
     private AddressRepository addressRepository;
 
-    public Organization createFromDto(OrganizationRequestDTO dto) {
-        try (Session session = hibernateUtil.getSessionFactory().openSession()) {
-            Transaction tx = session.beginTransaction();
-            try {
-                Organization org = createFromDtoInSession(dto, session);
-                tx.commit();
-                return org;
-            } catch (RuntimeException e) {
-                tx.rollback();
-                throw e;
-            }
-        }
-    }
-
     public Organization createFromDtoInSession(OrganizationRequestDTO dto, Session session) {
         Organization org = organizationMapper.toNewForCreate(dto);
         Coordinates coords;
         if(dto.getCoordinatesId() != null) {
             coords = session.get(Coordinates.class, dto.getCoordinatesId());
-            if (coords == null) throw new WebApplicationException("Координаты не найдены", 400);
+            if (coords == null) throw new IllegalArgumentException("Координаты не найдены");
         } else {
             coords = coordinatesRepository.createFromDto(dto.getCoordinates(), session);
         }
@@ -58,7 +43,7 @@ public class OrganizationRepository {
         Address official;
         if (dto.getOfficialAddressId() != null) {
             official = session.get(Address.class, dto.getOfficialAddressId());
-            if (official == null) throw new WebApplicationException("Официальный адрес не найден", 400);
+            if (official == null) throw new IllegalArgumentException("Официальный адрес не найден");
         } else {
             official = addressRepository.createFromDtoInSession(dto.getOfficialAddress(), session);
         }
@@ -66,21 +51,57 @@ public class OrganizationRepository {
 
         Address postal = null;
         if (dto.getPostalAddressId() != null && dto.getPostalAddress() != null) {
-            throw new WebApplicationException("Укажите адреса", 400);
+            throw new IllegalArgumentException("Укажите адреса");
         }
         if (dto.getPostalAddressId() != null) {
             postal = session.get(Address.class, dto.getPostalAddressId());
-            if (postal == null) throw new RuntimeException("Почтовый адрес не найден");
+            if (postal == null) throw new IllegalArgumentException("Почтовый адрес не найден");
         }
         else if (dto.getPostalAddress() != null) {
             postal = addressRepository.createFromDtoInSession(dto.getPostalAddress(), session);
         }
         org.setPostalAddress(postal);
-
-        session.save(org);
         return org;
     }
 
+    public Organization updateFromDtoInSession(Long id, OrganizationRequestDTO dto, Session session) {
+        Organization existing = session.get(Organization.class, id);
+        if (existing == null) throw new IllegalArgumentException("Организация не найдена");
+        organizationMapper.applyBasicToExisting(dto, existing);
+        if (dto.getCoordinatesId() != null || dto.getCoordinates() != null) {
+            Coordinates coords;
+            if (dto.getCoordinatesId() != null) {
+                coords = session.get(Coordinates.class, dto.getCoordinatesId());
+                if (coords == null) throw new IllegalArgumentException("Координаты не найдены");
+            } else {
+                coords = coordinatesRepository.createFromDto(dto.getCoordinates(), session);
+            }
+            existing.setCoordinates(coords);
+        }
+        if (dto.getOfficialAddressId() != null || dto.getOfficialAddress() != null) {
+            Address official;
+            if (dto.getOfficialAddressId() != null) {
+                official = session.get(Address.class, dto.getOfficialAddressId());
+                if (official == null) throw new IllegalArgumentException("Официальный адрес не найден");
+            } else {
+                official = addressRepository.createFromDtoInSession(dto.getOfficialAddress(), session);
+            }
+            existing.setOfficialAddress(official);
+        }
+        if (dto.isPostalAddressProvided() || dto.isPostalAddressIdProvided()) {
+            Address postal = null;
+            if (dto.getPostalAddressId() != null) {
+                postal = session.get(Address.class, dto.getPostalAddressId());
+                if (postal == null) throw new IllegalArgumentException("Почтовый адрес не найден");
+            } else if (dto.getPostalAddress() != null) {
+                postal = addressRepository.createFromDtoInSession(dto.getPostalAddress(), session);
+            } else {
+                postal = null;
+            }
+            existing.setPostalAddress(postal);
+        }
+        return existing;
+    }
 
     public Organization findById(Long id) {
         Objects.requireNonNull(id, "id не может быть 0");
@@ -108,55 +129,6 @@ public class OrganizationRepository {
                 left join fetch o.officialAddress
                 left join fetch o.postalAddress
             """, Organization.class).getResultList();
-        }
-    }
-
-    public void updateFromDto(Long id, OrganizationRequestDTO dto) {
-        try (Session session = hibernateUtil.getSessionFactory().openSession()) {
-            Transaction tx = session.beginTransaction();
-            try {
-                Organization existing = session.get(Organization.class, id);
-                if (existing == null) throw new WebApplicationException("Организация не найдена", 400);
-                organizationMapper.applyBasicToExisting(dto, existing);
-
-                if (dto.getCoordinatesId() != null || dto.getCoordinates() != null) {
-                    Coordinates coords;
-                    if (dto.getCoordinatesId() != null) {
-                        coords = session.get(Coordinates.class, dto.getCoordinatesId());
-                        if (coords == null) throw new WebApplicationException("Координаты не найдены", 400);
-                    } else {
-                        coords = coordinatesRepository.createFromDto(dto.getCoordinates(), session);
-                    }
-                    existing.setCoordinates(coords);
-                }
-                if (dto.getOfficialAddressId() != null || dto.getOfficialAddress() != null) {
-                    Address official;
-                    if (dto.getOfficialAddressId() != null) {
-                        official = session.get(Address.class, dto.getOfficialAddressId());
-                        if (official == null) throw new WebApplicationException("Официальный адрес не найден", 400);
-                    } else {
-                        official = addressRepository.createFromDtoInSession(dto.getOfficialAddress(), session);
-                    }
-                    existing.setOfficialAddress(official);
-                }
-                if (dto.isPostalAddressProvided() || dto.isPostalAddressIdProvided()) {
-                    Address postal = null;
-
-                    if (dto.getPostalAddressId() != null) {
-                        postal = session.get(Address.class, dto.getPostalAddressId());
-                        if (postal == null) throw new RuntimeException("Почтовый адрес не найден");
-                    } else if (dto.getPostalAddress() != null) {
-                        postal = addressRepository.createFromDtoInSession(dto.getPostalAddress(), session);
-                    } else {
-                        postal = null;
-                    }
-                    existing.setPostalAddress(postal);
-                }
-                tx.commit();
-            } catch (RuntimeException e) {
-                tx.rollback();
-                throw e;
-            }
         }
     }
 
@@ -237,7 +209,6 @@ public class OrganizationRepository {
         }
     }
 
-
     public int fireAllEmployees(long orgId) {
         try (Session session = hibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();
@@ -268,6 +239,70 @@ public class OrganizationRepository {
                 if (tx != null) tx.rollback();
                 throw e;
             }
+        }
+    }
+
+    private String norm(String s) {
+        return s == null ? "" : s.trim().toLowerCase();
+    }
+
+    public void ensureUniqueAddressAndCoords(Session session, String street, Float x, Long y, Long excludeId) {
+        String st = norm(street);
+        if (st.isBlank() || x == null || y == null) return;
+
+        String hql = """
+        select count(o.id)
+        from Organization o
+        join o.coordinates c
+        join o.officialAddress a
+        where lower(trim(a.street)) = :st
+          and c.x = :x
+          and c.y = :y
+    """;
+
+        if (excludeId != null) {
+            hql += " and o.id <> :id";
+        }
+
+        var q = session.createQuery(hql, Long.class)
+                .setParameter("st", st)
+                .setParameter("x", x)
+                .setParameter("y", y);
+
+        if (excludeId != null) q.setParameter("id", excludeId);
+
+        Long cnt = q.uniqueResult();
+        if (cnt != null && cnt > 0) {
+            throw new IllegalArgumentException(
+                    "Пара (officialAddress.street, coordinates.x, coordinates.y) должна быть уникальна"
+            );
+        }
+    }
+
+    public void ensureUniqueName(Session session, String name, Long excludeId) {
+        String n = norm(name);
+        if (n.isBlank()) return;
+
+        String hql = """
+        select count(o.id)
+        from Organization o
+        where lower(trim(o.name)) = :n
+    """;
+
+        if (excludeId != null) {
+            hql += " and o.id <> :id";
+        }
+
+        var q = session.createQuery(hql, Long.class)
+                .setParameter("n", n);
+
+        if (excludeId != null) q.setParameter("id", excludeId);
+
+        Long cnt = q.uniqueResult();
+        if (cnt != null && cnt > 0) {
+            throw new IllegalArgumentException(
+                    "Название организации должно быть уникальным (без учета регистра и пробелов)"
+            );
         }
     }
 }

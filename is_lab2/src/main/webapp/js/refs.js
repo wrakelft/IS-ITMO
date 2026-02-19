@@ -9,7 +9,14 @@ let replaceContext = null;
 async function safeFetch(url, options) {
     const res = await fetch(url, options);
     const text = await res.text();
-    if (!res.ok) throw new Error(text || `HTTP ${res.status}`);
+    if (!res.ok) {
+        let msg = text || `HTTP ${res.status}`;
+        try {
+            const obj = JSON.parse(text);
+            msg = obj?.message || obj?.error || msg;
+        } catch {}
+        throw new Error(msg);
+    }
     if (!text) return null;
     try { return JSON.parse(text); } catch { return text; }
 }
@@ -198,7 +205,7 @@ async function confirmReplace() {
         showOk("Удалено с перепривязкой");
         await loadAll();
     } catch (e) {
-        showReplaceError(e.message || "Ошибка");
+        showReplaceError(prettifyServerError(e));
     }
 }
 
@@ -221,6 +228,18 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
+
+function prettifyServerError(err) {
+    const raw = String(err?.message ?? err ?? "");
+    try {
+        const obj = JSON.parse(raw);
+        if (obj && typeof obj === "object") {
+            return obj.message || obj.error || obj.details || raw;
+        }
+    } catch {}
+    return raw;
+}
+
 
 window.tryDeleteAddress = tryDeleteAddress;
 window.tryDeleteCoord = tryDeleteCoord;
