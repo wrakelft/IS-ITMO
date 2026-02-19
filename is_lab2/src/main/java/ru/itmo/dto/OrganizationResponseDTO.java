@@ -6,6 +6,7 @@ import ru.itmo.model.OrganizationType;
 public class OrganizationResponseDTO {
     private Long id;
     private String name;
+    private Long version;
     private CoordinatesDTO coordinates;
     private LocalDateTime creationDate;
 
@@ -20,6 +21,9 @@ public class OrganizationResponseDTO {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
+    public Long getVersion() { return version; }
+    public void setVersion(Long version) { this.version = version; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }

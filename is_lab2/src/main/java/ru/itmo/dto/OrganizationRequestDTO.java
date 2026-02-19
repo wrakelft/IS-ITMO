@@ -8,6 +8,7 @@ import ru.itmo.model.OrganizationType;
 public class OrganizationRequestDTO {
     private String name;
 
+    private Long version;
     private CoordinatesDTO coordinates;
     private AddressDTO officialAddress;
     private AddressDTO postalAddress;
@@ -29,6 +30,8 @@ public class OrganizationRequestDTO {
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
+    public Long getVersion() { return version; }
+    public void setVersion(Long version) { this.version = version; }
     public CoordinatesDTO getCoordinates() { return coordinates; }
     public void setCoordinates(CoordinatesDTO coordinates) { this.coordinates = coordinates; }
 

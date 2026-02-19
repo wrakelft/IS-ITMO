@@ -12,6 +12,7 @@ let originalRefs = {
     officialStreet: null,
     postalStreet: null
 };
+let editingVersion = null;
 
 let filterState = { field: "name", value: "" };
 let sortState = { field: "id", dir: "asc" };
@@ -112,6 +113,7 @@ function clearOrganizationForm() {
 
 function startCreateOrganization() {
     editingOrganizationId = null;
+    editingVersion = null;
     document.getElementById('organizationEditTitle').textContent = 'Новая организация';
     clearOrganizationForm();
     document.getElementById('organizationEditSection').style.display = 'flex';
@@ -120,6 +122,7 @@ function startCreateOrganization() {
 
 function editOrganization(org) {
     editingOrganizationId = org.id;
+    editingVersion = org.version ?? null;
 
     originalRefs.coordinatesId = org.coordinates?.id ?? null;
     originalRefs.officialAddressId = org.officialAddress?.id ?? null;
@@ -202,6 +205,10 @@ function saveOrganization() {
         employeesCount,
         type
     };
+
+    if (isUpdate) {
+        payload.version = editingVersion;
+    }
 
     const coordsChanged = (originalRefs.coordinatesX !== xNum || originalRefs.coordinatesY !== yNum);
 

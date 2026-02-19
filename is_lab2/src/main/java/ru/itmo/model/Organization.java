@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 public class Organization {
     private Long id;
+    private Long version;
     private String name;
     private Coordinates coordinates;
     private LocalDateTime creationDate;
@@ -28,6 +29,9 @@ public class Organization {
         }
         this.id = id;
     }
+
+    public Long getVersion() { return version; }
+    public void setVersion(Long version) { this.version = version; }
 
     public String getName() {
         return name;

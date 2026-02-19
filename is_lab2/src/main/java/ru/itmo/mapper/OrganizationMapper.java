@@ -13,6 +13,7 @@ public class OrganizationMapper {
         OrganizationResponseDTO dto = new OrganizationResponseDTO();
         dto.setId(o.getId());
         dto.setName(o.getName());
+        dto.setVersion(o.getVersion());
         dto.setCreationDate(o.getCreationDate());
         dto.setAnnualTurnover(o.getAnnualTurnover());
         dto.setEmployeesCount(o.getEmployeesCount());

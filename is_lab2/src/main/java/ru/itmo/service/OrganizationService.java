@@ -12,6 +12,7 @@ import jakarta.inject.Named;
 import java.util.List;
 
 import ru.itmo.util.HibernateUtil;
+import ru.itmo.util.TxIsolationUtil;
 import ru.itmo.validation.OrganizationRequestValidator;
 import ru.itmo.websocket.OrganizationWebSocket;
 
@@ -26,32 +27,49 @@ public class OrganizationService {
     @Inject
     private OrganizationRequestValidator validator;
 
+    private static final int TX_RETRIES = 3;
+
     public Organization createOrganization(OrganizationRequestDTO dto) {
         validator.validateForCreate(dto);
-        try (Session session = hibernateUtil.getSessionFactory().openSession()) {
-            Transaction tx = session.beginTransaction();
-            try {
-                Organization organization = organizationRepository.createFromDtoInSession(dto, session);
 
-                organizationRepository.ensureUniqueName(session, organization.getName(), null);
+        RuntimeException last = null;
+        for (int attempt = 1; attempt <= TX_RETRIES; attempt++) {
+            try (Session session = hibernateUtil.getSessionFactory().openSession()) {
+                Transaction tx = session.beginTransaction();
+                TxIsolationUtil.setSerializable(session);
+                try {
 
-                var c = organization.getCoordinates();
-                var a = organization.getOfficialAddress();
-                if (c != null && a != null) {
-                    organizationRepository.ensureUniqueAddressAndCoords(session, a.getStreet(), c.getX(), c.getY(), null);
+                    Organization organization = organizationRepository.createFromDtoInSession(dto, session);
+
+                    organizationRepository.ensureUniqueName(session, organization.getName(), null);
+
+                    var c = organization.getCoordinates();
+                    var a = organization.getOfficialAddress();
+                    if (c != null && a != null) {
+                        organizationRepository.ensureUniqueAddressAndCoords(session, a.getStreet(), c.getX(), c.getY(), null);
+                    }
+                    session.save(organization);
+                    session.flush();
+                    tx.commit();
+                    OrganizationWebSocket.broadcast("{\"type\":\"CREATE\",\"id\":" + organization.getId() + "}");
+                    return organization;
+                } catch (RuntimeException e) {
+                    try {
+                        tx.rollback();
+                    } catch (Exception ignore) {
+                    }
+                    if (TxIsolationUtil.isSerializationFailure(e)) {
+                        last = e;
+                        continue;
+                    }
+                    throw e;
                 }
-                session.save(organization);
-                tx.commit();
-                OrganizationWebSocket.broadcast("{\"type\":\"CREATE\",\"id\":" + organization.getId() + "}");
-                return organization;
-            } catch (RuntimeException e) {
-                tx.rollback();
-                throw e;
             }
         }
+        throw new IllegalStateException("Транзакция неудалась после нескольких попыток из за ошибки сериализации", last);
     }
 
-    public Organization findById(Long id) {
+        public Organization findById(Long id) {
         return organizationRepository.findById(id);
     }
 
@@ -62,32 +80,56 @@ public class OrganizationService {
     public void updateOrganizationDto(Long id, OrganizationRequestDTO dto) {
         validator.validateForUpdate(dto);
 
-        try (Session session = hibernateUtil.getSessionFactory().openSession()) {
-            Transaction tx = session.beginTransaction();
-            try {
-                Organization existing = organizationRepository.updateFromDtoInSession(id, dto, session);
+        RuntimeException last = null;
+        for (int attempt = 1; attempt <= TX_RETRIES; attempt++) {
+            try (Session session = hibernateUtil.getSessionFactory().openSession()) {
+                Transaction tx = session.beginTransaction();
+                TxIsolationUtil.setSerializable(session);
+                try {
+                    Organization existing = session.get(Organization.class, id);
+                    if (existing == null) throw new IllegalArgumentException("Организация не найдена");
 
-                if (existing == null) throw new IllegalArgumentException("Организация не найдена");
+                    Long reqV = dto.getVersion();
+                    if (reqV == null) {
+                        throw new jakarta.ws.rs.BadRequestException("Поле version обязательно для обновления");
+                    }
 
-                organizationRepository.ensureUniqueName(session, existing.getName(), id);
+                    Long dbV = existing.getVersion();
+                    if (dbV == null || !reqV.equals(dbV)) {
+                        try { tx.rollback(); } catch (Exception ignore) {}
+                        throw new jakarta.ws.rs.WebApplicationException("Конфликт версий", 409);
+                    }
 
-                var c = existing.getCoordinates();
-                var a = existing.getOfficialAddress();
-                if (c != null && a != null) {
-                    organizationRepository.ensureUniqueAddressAndCoords(
-                            session, a.getStreet(), c.getX(), c.getY(), id
-                    );
+                    organizationRepository.updateFromDtoInSession(id, dto, session);
+
+                    organizationRepository.ensureUniqueName(session, existing.getName(), id);
+
+                    var c = existing.getCoordinates();
+                    var a = existing.getOfficialAddress();
+                    if (c != null && a != null) {
+                        organizationRepository.ensureUniqueAddressAndCoords(
+                                session, a.getStreet(), c.getX(), c.getY(), id
+                        );
+                    }
+
+
+                    session.flush();
+                    tx.commit();
+
+                    OrganizationWebSocket.broadcast("{\"type\":\"UPDATE\",\"id\":" + id + "}");
+                    return;
+
+                } catch (RuntimeException e) {
+                    try { tx.rollback(); } catch (Exception ignore) {}
+                    if (TxIsolationUtil.isSerializationFailure(e)) {
+                        last = e;
+                        continue;
+                    };
+                    throw e;
                 }
-
-                session.flush();
-                tx.commit();
-
-                OrganizationWebSocket.broadcast("{\"type\":\"UPDATE\",\"id\":" + id + "}");
-            } catch (RuntimeException e) {
-                tx.rollback();
-                throw e;
             }
         }
+        throw new IllegalStateException("Транзакция неудалась после нескольких попыток из за ошибки сериализации", last);
     }
 
 
