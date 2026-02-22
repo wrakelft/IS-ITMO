@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jboss-deployment-structure>
+    <deployment>
+        <exclude-subsystems>
+            <subsystem name="jpa"/>
+            <subsystem name="bean-validation"/>
+        </exclude-subsystems>
+        <exclusions>
+            <module name="org.jboss.resteasy.resteasy-validator-provider"/>
+        </exclusions>
+    </deployment>
+</jboss-deployment-structure>
