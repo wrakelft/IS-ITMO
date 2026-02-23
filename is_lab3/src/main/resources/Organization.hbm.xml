@@ -5,6 +5,7 @@
 
 <hibernate-mapping>
     <class name="ru.itmo.model.Organization" table="organizations">
+        <cache usage="read-write" region="organization"/>
         <id name="id" type="long" column="id">
             <generator class="native"/>
         </id>

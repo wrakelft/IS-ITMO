@@ -327,6 +327,65 @@ th, td { vertical-align: top; }
     white-space: nowrap;
 }
 
+.cache-tools{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin:12px 0;
+}
 
+.toggle{
+    position:relative;
+    display:inline-block;
+    width:54px;
+    height:30px;
+}
 
+.toggle input{
+    opacity:0;
+    width:0;
+    height:0;
+}
 
+.toggle-slider{
+    position:absolute;
+    inset:0;
+    cursor:pointer;
+    border-radius:999px;
+    background:#3a3a3a;
+    border:1px solid #4a4a4a;
+    transition: .2s;
+}
+
+.toggle-slider:before{
+    content:"";
+    position:absolute;
+    height:22px;
+    width:22px;
+    left:4px;
+    top:50%;
+    transform:translateY(-50%);
+    border-radius:999px;
+    background:#dcdcdc;
+    transition:.2s;
+}
+
+.toggle input:checked + .toggle-slider{
+    background:#2ea44f; /* твой зеленый вайб */
+    border-color:#2ea44f;
+}
+
+.toggle input:checked + .toggle-slider:before{
+    transform:translate(24px, -50%);
+    background:#ffffff;
+}
+
+.cache-label{
+    font-weight:700;
+    font-size:18px;
+}
+
+.cache-state{
+    opacity:.85;
+    font-weight:600;
+}

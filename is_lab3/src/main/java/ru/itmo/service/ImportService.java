@@ -9,6 +9,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import ru.itmo.cache.LogL2Stats;
 import ru.itmo.db.ImportOperationRepository;
 import ru.itmo.db.OrganizationRepository;
 import ru.itmo.dto.ImportOperationResponseDTO;
@@ -26,6 +27,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.io.ByteArrayInputStream;
 
+@LogL2Stats
 @ApplicationScoped
 public class ImportService {
     @Inject private HibernateUtil hibernateUtil;

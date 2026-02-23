@@ -5,6 +5,7 @@
 
 <hibernate-mapping>
     <class name="ru.itmo.model.Coordinates" table="coordinates">
+        <cache usage="nonstrict-read-write" region="coordinates"/>
         <id name="id" type="long" column="id">
             <generator class="native"/>
         </id>

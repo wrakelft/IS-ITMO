@@ -3,9 +3,13 @@ package ru.itmo.controller;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import ru.itmo.cache.CacheLogToggle;
+import ru.itmo.service.AdminDiagnosticsService;
+import ru.itmo.service.CacheStatsService;
 import ru.itmo.util.HibernateUtil;
 
 import java.util.Map;
+
 
 @Path("/api/admin")
 @Produces(MediaType.APPLICATION_JSON)
@@ -13,6 +17,12 @@ public class AdminController {
 
     @Inject
     private HibernateUtil hibernateUtil;
+    @Inject
+    private CacheLogToggle cacheLogToggle;
+    @Inject
+    AdminDiagnosticsService diagnosticsService;
+    @Inject
+    CacheStatsService cacheStatsService;
 
     @GET
     @Path("/pool")
@@ -31,19 +41,33 @@ public class AdminController {
     @GET
     @Path("/db-hold")
     public Map<String, Object> hold(@QueryParam("ms") @DefaultValue("2000") long ms) {
-        try (var session = hibernateUtil.getSessionFactory().openSession()) {
-            var tx = session.beginTransaction();
+        long held = diagnosticsService.dbHold(ms);
+        return Map.of("heldMs", held);
+    }
 
-            session.createNativeQuery("select 1").getSingleResult();
+    @GET
+    @Path("/cache-logging")
+    public Map<String, Object> cacheLoggingStatus() {
+        return Map.of("enabled", cacheLogToggle.isEnabled());
+    }
 
-            Thread.sleep(ms);
+    @POST
+    @Path("/cache-logging")
+    public Map<String, Object> setCacheLogging(@QueryParam("enabled") @DefaultValue("false") boolean enabled) {
+        cacheLogToggle.setEnabled(enabled);
+        return Map.of("enabled", enabled);
+    }
 
-            tx.commit();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
+    @GET
+    @Path("/cache-stats")
+    public Map<String, Object> cacheStats() {
+        return cacheStatsService.getStats();
+    }
 
-        return Map.of("heldMs", ms);
+    @POST
+    @Path("/cache-stats/reset")
+    public Map<String, Object> resetCacheStats() {
+        cacheStatsService.reset();
+        return Map.of("reset", true);
     }
 }

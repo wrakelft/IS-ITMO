@@ -44,7 +44,6 @@
                 <option value="postalAddress">Почтовый адрес</option>
                 <option value="type">Тип</option>
                 <option value="creationDate">Дата создания</option>
-
             </select>
 
             <select id="sortDir">
@@ -53,6 +52,14 @@
             </select>
 
             <button class="secondary" onclick="applySort()">Сортировать</button>
+            <div class="cache-tools">
+                <label class="toggle">
+                    <input type="checkbox" id="cacheToggle" onchange="onCacheToggle()">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="cache-label">L2 logging</span>
+                <span id="cacheState" class="cache-state">...</span>
+            </div>
         </div>
         <div class="filter-right">
             <div class="role-switch">

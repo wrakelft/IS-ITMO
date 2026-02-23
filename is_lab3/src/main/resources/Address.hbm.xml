@@ -5,6 +5,7 @@
 
 <hibernate-mapping>
     <class name="ru.itmo.model.Address" table="addresses">
+        <cache usage="nonstrict-read-write" region="address"/>
         <id name="id" type="long" column="id">
             <generator class="native"/>
         </id>

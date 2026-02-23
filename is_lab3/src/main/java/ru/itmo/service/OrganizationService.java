@@ -2,6 +2,7 @@ package ru.itmo.service;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import ru.itmo.cache.LogL2Stats;
 import ru.itmo.dto.OrganizationRequestDTO;
 import ru.itmo.model.Organization;
 import ru.itmo.db.OrganizationRepository;
@@ -16,6 +17,7 @@ import ru.itmo.util.TxIsolationUtil;
 import ru.itmo.validation.OrganizationRequestValidator;
 import ru.itmo.websocket.OrganizationWebSocket;
 
+@LogL2Stats
 @Named("organizationService")
 @ApplicationScoped
 public class OrganizationService {

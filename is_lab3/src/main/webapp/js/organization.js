@@ -622,7 +622,35 @@ function renderImportHistory(list) {
     });
 }
 
+const ADMIN = "api/admin";
 
+async function api(url, opts) {
+    const r = await fetch(url, opts);
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+}
+
+async function refreshCacheToggle() {
+    const s = await api(`${ADMIN}/cache-logging`);
+    const t = document.getElementById("cacheToggle");
+    const st = document.getElementById("cacheState");
+
+    if (t) t.checked = !!s.enabled;
+    if (st) st.textContent = s.enabled ? "ON" : "OFF";
+}
+
+async function onCacheToggle() {
+    const t = document.getElementById("cacheToggle");
+    const next = !!t?.checked;
+    await api(`${ADMIN}/cache-logging?enabled=${next}`, { method: "POST" });
+    await refreshCacheToggle();
+}
+
+window.onCacheToggle = onCacheToggle;
+
+document.addEventListener("DOMContentLoaded", () => {
+    refreshCacheToggle().catch(() => {});
+});
 
 window.applyFilter = applyFilter;
 window.resetFilter = resetFilter;

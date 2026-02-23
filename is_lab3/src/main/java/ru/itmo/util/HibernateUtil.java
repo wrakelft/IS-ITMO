@@ -53,6 +53,10 @@ public class HibernateUtil {
                     "org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl");
             standardServiceRegistry.applySetting("hibernate.connection.datasource", dataSource);
 
+            var ehcacheUrl = HibernateUtil.class.getClassLoader().getResource("ehcache.xml");
+            if (ehcacheUrl == null) throw new IllegalStateException("ehcache.xml not found");
+            standardServiceRegistry.applySetting("hibernate.javax.cache.uri", ehcacheUrl.toURI().toString());
+
             StandardServiceRegistry registry = standardServiceRegistry.build();
 
             Metadata metadata = new MetadataSources(registry)
@@ -64,7 +68,9 @@ public class HibernateUtil {
                     .build();
 
             sessionFactory = metadata.getSessionFactoryBuilder().build();
+            sessionFactory.getStatistics().setStatisticsEnabled(true);
         } catch (Exception e) {
+            e.printStackTrace(); // <-- временно для отладки
             throw new RuntimeException("Failed to create Hibernate SF with DBCP2", e);
         }
     }

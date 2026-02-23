@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://www.ehcache.org/v3"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.ehcache.org/v3 http://www.ehcache.org/schema/ehcache-core.xsd">
+
+    <cache-template name="hibernate-template">
+        <expiry>
+            <ttl unit="minutes">10</ttl>
+        </expiry>
+        <resources>
+            <heap unit="entries">2000</heap>
+            <offheap unit="MB">32</offheap>
+        </resources>
+    </cache-template>
+
+    <cache alias="organization" uses-template="hibernate-template"/>
+    <cache alias="coordinates" uses-template="hibernate-template"/>
+    <cache alias="address" uses-template="hibernate-template"/>
+    <cache alias="importOperation" uses-template="hibernate-template"/>
+</config>
