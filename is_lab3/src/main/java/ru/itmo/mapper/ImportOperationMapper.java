@@ -20,6 +20,10 @@ public class ImportOperationMapper {
         d.startedAt = op.getStartedAt();
         d.finishedAt = op.getFinishedAt();
         d.message = op.getErrorMessage();
+        d.fileName = op.getFileName();
+        d.fileContentType = op.getFileContentType();
+        d.fileSize = op.getFileSize();
+        d.hasFile = op.getFileKey() != null;
         return d;
     }
 }

@@ -38,26 +38,6 @@ public class ImportOperationRepository {
         }
     }
 
-    public void markAsSuccess(long opId, int addedCount) {
-        try (Session session = hibernateUtil.getSessionFactory().openSession()) {
-            Transaction tx = session.beginTransaction();
-            try {
-                ImportOperation op = session.get(ImportOperation.class, opId);
-                if (op == null) { tx.commit(); return; }
-
-                op.setStatus("SUCCESS");
-                op.setAddedCount(addedCount);
-                op.setFinishedAt(LocalDateTime.now());
-                op.setErrorMessage(null);
-
-                tx.commit();
-            } catch (RuntimeException e) {
-                tx.rollback();
-                throw e;
-            }
-        }
-    }
-
     public void markAsFailed(long opId, String errorMessage) {
         try (Session session = hibernateUtil.getSessionFactory().openSession()) {
             Transaction tx = session.beginTransaction();
@@ -100,6 +80,14 @@ public class ImportOperationRepository {
                     .setMaxResults(lim)
                     .getResultList();
         }
+    }
+
+    public ImportOperation findById(Session session, long id) {
+        return session.get(ImportOperation.class, id);
+    }
+
+    public void save(Session session, ImportOperation op) {
+        session.persist(op);
     }
 
     private String shortMsg(String m) {

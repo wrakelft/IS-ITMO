@@ -22,7 +22,14 @@ public class ImportController {
     public Response importOrganizations(@MultipartForm FileImportDTO form,
                                         @QueryParam("username") @DefaultValue("guest") String username,
                                         @QueryParam("role") @DefaultValue("USER") String role) {
-        int added = importService.importOrganizationJsonArray(form != null ? form.getFile() : null, username, role);
+        String fileName = form != null ? form.getFileName() : null;
+        String contentType = form != null ? form.getContentType() : null;
+
+        int added = importService.importOrganizationJsonArray(form != null ? form.getFile() : null,
+                username,
+                role,
+                fileName,
+                contentType);
 
         ImportOperationResponseDTO resp = new ImportOperationResponseDTO();
         resp.status = "SUCCESS";
@@ -38,6 +45,15 @@ public class ImportController {
                             @QueryParam("limit") @DefaultValue("100") int limit) {
 
         return Response.ok(importService.getHistory(username, role, limit)).build();
+    }
+
+    @GET
+    @Path("/{opId}/file")
+    public Response downloadFile(@PathParam("opId") long opId,
+                                 @QueryParam("username") @DefaultValue("guest") String username,
+                                 @QueryParam("role") @DefaultValue("USER") String role) {
+
+        return importService.downloadImportFile(opId, username, role);
     }
 
     @GET

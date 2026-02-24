@@ -16,6 +16,11 @@ public class ImportOperation {
 
     private String errorMessage;     // только для FAILED
 
+    private String fileKey;
+    private String fileName;
+    private String fileContentType;
+    private Long fileSize;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -42,4 +47,16 @@ public class ImportOperation {
 
     public String getErrorMessage() { return errorMessage; }
     public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
+
+    public String getFileKey() { return fileKey; }
+    public void setFileKey(String fileKey) { this.fileKey = fileKey; }
+
+    public String getFileName() { return fileName; }
+    public void setFileName(String fileName) { this.fileName = fileName; }
+
+    public String getFileContentType() { return fileContentType; }
+    public void setFileContentType(String fileContentType) { this.fileContentType = fileContentType; }
+
+    public Long getFileSize() { return fileSize; }
+    public void setFileSize(Long fileSize) { this.fileSize = fileSize; }
 }

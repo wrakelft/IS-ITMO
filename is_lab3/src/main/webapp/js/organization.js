@@ -406,21 +406,32 @@ document.addEventListener('DOMContentLoaded', () => {
             valInp.value = "";
         });
     }
-});
+    refreshCacheToggle().catch(() => {});
+    if (window.wsBus) {
+        window.wsBus.start();
 
-if (window.wsBus) {
-    wsBus.start();
-    wsBus.on((msg) => {
-        if (["CREATE","UPDATE","DELETED","FIRE_ALL","HIRE","IMPORT"].includes(msg.type)) {
-            loadTableData();
-        }
-        if (["IMPORT"].includes(msg.type)) {
+        // грузим историю сразу и через 400мс после IMPORT
+        let t = null;
+        const reloadImportHistory = () => {
             loadImportHistory();
-        }
-    });
-}
+            clearTimeout(t);
+            t = setTimeout(loadImportHistory, 400);
+        };
 
+        window.wsBus.on((msg) => {
+            if (!msg || !msg.type) return;
 
+            if (["CREATE","UPDATE","DELETED","FIRE_ALL","HIRE","IMPORT"].includes(msg.type)) {
+                loadTableData();
+            }
+            if (msg.type === "IMPORT") {
+                reloadImportHistory();
+            }
+        });
+    } else {
+        console.warn("wsBus not found (wsBus.js not loaded?)");
+    }
+});
 
 function showFormError(msg) {
     const box = document.getElementById("organizationFormError");
@@ -467,6 +478,8 @@ async function importOrganizations() {
 
     const fd = new FormData();
     fd.append("file", file);
+    fd.append("fileName", file.name);
+    fd.append("contentType", file.type || "application/json");
 
     try {
         setStatus("Загружаю...", false);
@@ -609,6 +622,13 @@ function renderImportHistory(list) {
                 : "";
 
         const tr = document.createElement("tr");
+        const canDownload =
+            status === "SUCCESS" && (op.hasFile === true || op.fileName || op.fileKey);
+
+        const dlUrl = canDownload
+            ? withCtxQuery(`api/import/${safe(op.id)}/file`)
+            : "";
+
         tr.innerHTML = `
       <td>${safe(op.id)}</td>
       <td>${status}</td>
@@ -617,6 +637,15 @@ function renderImportHistory(list) {
       <td>${added}</td>
       <td>${fmtDate(op.finishedAt)}</td>
       <td class="msg">${message}</td>
+      <td>
+    ${
+            canDownload
+                ? `<a class="import-link" href="${dlUrl}" title="${safe(op.fileName || '')}">
+                      ${safe(op.fileName || "download")}
+                   </a>`
+                : `—`
+        }
+  </td>
     `;
         body.appendChild(tr);
     });
@@ -647,10 +676,6 @@ async function onCacheToggle() {
 }
 
 window.onCacheToggle = onCacheToggle;
-
-document.addEventListener("DOMContentLoaded", () => {
-    refreshCacheToggle().catch(() => {});
-});
 
 window.applyFilter = applyFilter;
 window.resetFilter = resetFilter;

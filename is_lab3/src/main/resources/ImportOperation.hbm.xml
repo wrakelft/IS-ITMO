@@ -22,5 +22,10 @@
 
         <property name="errorMessage" column="error_message" type="string" not-null="false" length="500"/>
 
+        <property name="fileKey" column="file_key" type="string" length="512"/>
+        <property name="fileName" column="file_name" type="string" length="512"/>
+        <property name="fileContentType" column="file_content_type" type="string" length="255"/>
+        <property name="fileSize" column="file_size" type="long"/>
+
     </class>
 </hibernate-mapping>

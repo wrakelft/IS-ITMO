@@ -12,4 +12,8 @@ public class ImportOperationResponseDTO {
     public LocalDateTime startedAt;
     public LocalDateTime finishedAt;
     public String message;
+    public String fileName;
+    public String fileContentType;
+    public Long fileSize;
+    public Boolean hasFile;
 }
